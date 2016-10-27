@@ -7,8 +7,8 @@ import uk.gov.hmrc.selfservicetimetopay.models.InterestRate
 
 import scala.io.Source
 
-class InterestRateService extends InterestRateService {
-  val filename = "/interestRates.csv"
+object InterestRateService extends InterestRateService {
+  override val filename = "/interestRates.csv"
 }
 
 trait InterestRateService {
@@ -18,17 +18,16 @@ trait InterestRateService {
   lazy val rates: Seq[InterestRate] = streamInterestRates(filename)
 
   private val interestRateConsumer = { line: String =>
-    val (date, rate) = line.split(",")
-    val endDate: Option[LocalDate] = rates.lastOption.map(ir => ir.startDate.minusDays(1))
-    InterestRate(date, endDate, rate)
+    line.split(",").toSeq match {
+      case date :: rate :: Nil =>
+        val endDate: Option[LocalDate] = rates.lastOption.map(ir => ir.startDate.minusDays(1))
+        InterestRate(LocalDate.parse(date, DATE_TIME_FORMATTER), endDate, BigDecimal(rate))
+      case _ => throw new IllegalArgumentException()
+    }
   }
 
   private def streamInterestRates(fileName: String): Seq[InterestRate] = {
     Source.fromFile(fileName).getLines().map(interestRateConsumer).toSeq
-  }
-
-  def getAllRates: Seq[InterestRate] = {
-    rates
   }
 
   def getRateAt(date: LocalDate): Option[InterestRate] = {
@@ -36,13 +35,16 @@ trait InterestRateService {
   }
 
   def getRatesForPeriod(startDate: LocalDate, endDate: LocalDate): Seq[InterestRate] = {
-    rates.filter(interestRate -> (interestRate.getStartDate().compareTo(endDate) <= 0) &&
-      (interestRate.getEndDate() == null || interestRate.getEndDate().compareTo(startDate) >= 0)).flatMap(interestRate -> {
-      int startYear = startDate.isAfter(interestRate.getStartDate()) ? startDate.getYear(): interestRate.getStartDate ().getYear();
-      int endYear = interestRate.getEndDate() == null ? endDate.getYear(): interestRate.getEndDate ().getYear();
+    rates.filter { interestRate =>
+      (interestRate.startDate.compareTo(endDate) <= 0) &&
+        (interestRate.endDate.getOrElse(LocalDate.MAX).compareTo(startDate) >= 0)
+    }.flatMap { rate =>
+      val startYear = Seq(rate.startDate.getYear, startDate.getYear).max
+      val endYear = Seq(rate.endDate.getOrElse(LocalDate.MAX).getYear, endDate.getYear).min
 
-      return IntStream.rangeClosed(startYear, endYear).mapToObj(year -> new InterestRate(year == startYear ? interestRate.getStartDate(): LocalDate.of(year, 1, 1),
-        year == endYear ? interestRate.getEndDate(): LocalDate.of(year, 12, 31), interestRate.getRate()) );
-    }).sorted(InterestRate.compareTo).collect(Collectors.toList)
+      Iterable.range(startYear, endYear).map { year =>
+        InterestRate(LocalDate.of(year, 1, 1), Some(LocalDate.of(year, 12, 31)), rate.rate)
+      }
+    }
   }
 }

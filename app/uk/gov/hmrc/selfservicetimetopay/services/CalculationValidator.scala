@@ -2,12 +2,12 @@ package uk.gov.hmrc.selfservicetimetopay.services
 
 import uk.gov.hmrc.selfservicetimetopay.models.Calculation
 
-trait CalculationValidator {
-  val validator: Validator = ???
+object CalculationValidator extends CalculationValidator {
+  override val validator = ???
 }
 
-class CalculationValidator extends CalculationValidator {
-  val validator = ???
+trait CalculationValidator {
+  val validator: Validator = ???
 
   def validate(calculation: Calculation) {
     val violations: Seq[ConstraintViolation[Calculation]] = validator.validate(calculation)
