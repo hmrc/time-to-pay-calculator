@@ -26,9 +26,8 @@ import uk.gov.hmrc.play.microservice.bootstrap.DefaultMicroserviceGlobal
 import uk.gov.hmrc.play.auth.microservice.filters.AuthorisationFilter
 import uk.gov.hmrc.play.filters.MicroserviceFilterSupport
 
-
 object ControllerConfiguration extends ControllerConfig {
-  lazy val controllerConfigs = Play.current.configuration.underlying.as[Config]("controllers")
+  lazy val controllerConfigs = Play.current.configuration.underlying.getConfig("controllers")
 }
 
 object AuthParamsControllerConfiguration extends AuthParamsControllerConfig {

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2016 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package uk.gov.hmrc.selfservicetimetopay.services
 
 import java.time.LocalDate
@@ -8,7 +24,6 @@ import uk.gov.hmrc.selfservicetimetopay.models._
 import scala.math.BigDecimal.RoundingMode.{FLOOR, HALF_UP}
 
 object CalculatorService extends CalculatorService {
-  override val validator: CalculationValidator = CalculationValidator
   override val interestService: InterestRateService = InterestRateService
 }
 
@@ -18,7 +33,6 @@ trait CalculatorService {
   val PRECISION_2DP = 2
   val PRECISION_10DP = 10
 
-  val validator: CalculationValidator = ???
   val interestService: InterestRateService = ???
   val durationService = DurationService
 
@@ -93,7 +107,6 @@ trait CalculatorService {
   }
 
   def generateMultipleSchedules(calculation: Calculation): Seq[PaymentSchedule] = {
-    validator.validate(calculation)
     Seq(buildSchedule(calculation))
   }
 
@@ -107,8 +120,10 @@ trait CalculatorService {
     interestToPay
   }
 
+  implicit def orderingLocalDate: Ordering[LocalDate] = Ordering.fromLessThan(_ isBefore _)
+
   private def amortizedInterest(calculation: Calculation) = { l: Liability =>
-    val startDate = Iterable.range(calculation.startDate, l.dueDate).max
+    val startDate = Seq(calculation.startDate, l.dueDate).max
 
     val rate = l.rate.rate
     val endDate = l.endDate

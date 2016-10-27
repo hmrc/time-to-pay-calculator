@@ -16,24 +16,31 @@
 
 package uk.gov.hmrc.selfservicetimetopay.controllers
 
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import play.api.libs.json.Json
 import play.api.mvc._
-import uk.gov.hmrc.selfservicetimetopay.models.Calculation
+import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.selfservicetimetopay.models._
 import uk.gov.hmrc.selfservicetimetopay.services.CalculatorService
 
 import scala.concurrent.Future
 
 object PaymentCalculationController extends PaymentCalculationController {
-	override val calculatorService = CalculatorService
+  override val calculatorService = CalculatorService
 }
 
 trait PaymentCalculationController extends BaseController {
 
-	val calculatorService:CalculatorService = ???
+  val calculatorService: CalculatorService = ???
 
-	def generate() = Action.async { implicit request =>
-		withJsonBody[Calculation] { calculation =>
-			Future.successful(Ok(calculatorService.generateMultipleSchedules(calculation)))
-		}
-	}
+  implicit val instalmentFormatter = Json.format[Instalment]
+  implicit val paymentScheduleFormatter = Json.format[PaymentSchedule]
+  implicit val interestRateFormatter = Json.format[InterestRate]
+  implicit val liabilityFormatter = Json.format[Liability]
+  implicit val calculationFormatter = Json.format[Calculation]
+
+  def generate() = Action.async(parse.json) { implicit request =>
+    withJsonBody[Calculation] { calculation =>
+      Future.successful(Ok(Json.toJson(calculatorService.generateMultipleSchedules(calculation))))
+    }
+  }
 }
