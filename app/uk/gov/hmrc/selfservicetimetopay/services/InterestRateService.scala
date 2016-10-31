@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.selfservicetimetopay.services
 
+import java.io.FileNotFoundException
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -28,22 +29,27 @@ object InterestRateService extends InterestRateService {
 }
 
 trait InterestRateService {
-  val filename: String = ???
+  val filename: String
   val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE:dd MMM yyyy")
 
   lazy val rates: Seq[InterestRate] = streamInterestRates(filename)
 
-  private val interestRateConsumer = { line: String =>
+  private val interestRateConsumer = { (rates: Seq[InterestRate], line: String) =>
     line.split(",").toSeq match {
-      case date :: rate :: Nil =>
+      case Seq(date, rate) =>
         val endDate: Option[LocalDate] = rates.lastOption.map(ir => ir.startDate.minusDays(1))
-        InterestRate(LocalDate.parse(date, DATE_TIME_FORMATTER), endDate, BigDecimal(rate))
-      case _ => throw new IllegalArgumentException()
+        rates :+ InterestRate(LocalDate.parse(date, DATE_TIME_FORMATTER), endDate, BigDecimal(rate))
+      case _ => throw new IndexOutOfBoundsException()
     }
   }
 
   private def streamInterestRates(fileName: String): Seq[InterestRate] = {
-    Source.fromFile(fileName).getLines().map(interestRateConsumer).toSeq
+    try {
+      Source.fromInputStream(getClass.getResourceAsStream(fileName)).getLines().foldLeft(Seq[InterestRate]())(interestRateConsumer)
+    } catch {
+      case e: NullPointerException => throw new FileNotFoundException(fileName)
+      case t: Throwable => throw t
+    }
   }
 
   def getRateAt(date: LocalDate): Option[InterestRate] = {
@@ -58,7 +64,7 @@ trait InterestRateService {
       val startYear = Seq(rate.startDate.getYear, startDate.getYear).max
       val endYear = Seq(rate.endDate.getOrElse(LocalDate.MAX).getYear, endDate.getYear).min
 
-      Iterable.range(startYear, endYear).map { year =>
+      Range.inclusive(startYear, endYear).map { year =>
         InterestRate(LocalDate.of(year, 1, 1), Some(LocalDate.of(year, 12, 31)), rate.rate)
       }
     }

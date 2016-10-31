@@ -18,10 +18,10 @@ package uk.gov.hmrc.selfservicetimetopay.models
 
 import java.time.LocalDate
 
-case class Liability(`type`: String, amount: BigDecimal, interestAccrued: BigDecimal, interestCalculationDate: LocalDate, dueDate: LocalDate, endDate: LocalDate, rate: InterestRate)
+case class Liability(`type`: String, amount: BigDecimal, interestAccrued: BigDecimal, interestCalculationDate: LocalDate, dueDate: LocalDate, endDate: Option[LocalDate] = None, rate: Option[InterestRate] = None)
 
 object Liability {
   def partialOf(l: Liability, startDate: LocalDate, endDate: LocalDate, rate: InterestRate): Liability = {
-    Liability(l.`type`, l.amount, l.interestAccrued, l.interestCalculationDate, startDate, endDate, rate)
+    Liability(l.`type`, l.amount, l.interestAccrued, l.interestCalculationDate, startDate, Some(endDate), Some(rate))
   }
 }

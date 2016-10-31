@@ -24,23 +24,17 @@ import uk.gov.hmrc.selfservicetimetopay.services.CalculatorService
 
 import scala.concurrent.Future
 
-object PaymentCalculationController extends PaymentCalculationController {
-  override val calculatorService = CalculatorService
-}
-
 trait PaymentCalculationController extends BaseController {
 
-  val calculatorService: CalculatorService = ???
-
-  implicit val instalmentFormatter = Json.format[Instalment]
-  implicit val paymentScheduleFormatter = Json.format[PaymentSchedule]
-  implicit val interestRateFormatter = Json.format[InterestRate]
-  implicit val liabilityFormatter = Json.format[Liability]
-  implicit val calculationFormatter = Json.format[Calculation]
+  val calculatorService: CalculatorService
 
   def generate() = Action.async(parse.json) { implicit request =>
     withJsonBody[Calculation] { calculation =>
       Future.successful(Ok(Json.toJson(calculatorService.generateMultipleSchedules(calculation))))
     }
   }
+}
+
+object PaymentCalculationController extends PaymentCalculationController {
+  override val calculatorService = CalculatorService
 }

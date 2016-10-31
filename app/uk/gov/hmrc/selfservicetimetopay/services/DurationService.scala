@@ -20,7 +20,7 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.time.temporal.ChronoUnit._
 
-object DurationService {
+trait DurationService {
   def getDaysBetween(startDate: LocalDate, endDate: LocalDate): Long = calculatePeriod(startDate, endDate, DAYS, inclusive = false)
 
   def getRepaymentDates(startDate: LocalDate, endDate: LocalDate): Seq[LocalDate] = {
@@ -39,3 +39,5 @@ object DurationService {
     }
   }
 }
+
+object DurationService extends DurationService

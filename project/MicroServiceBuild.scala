@@ -1,4 +1,7 @@
 import sbt._
+import uk.gov.hmrc.SbtAutoBuildPlugin
+import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
+import uk.gov.hmrc.versioning.SbtGitVersioning
 
 object MicroServiceBuild extends Build with MicroService {
 
@@ -8,17 +11,17 @@ object MicroServiceBuild extends Build with MicroService {
 }
 
 private object AppDependencies {
-  import play.sbt.PlayImport._
+  import play.PlayImport._
   import play.core.PlayVersion
 
-  private val microserviceBootstrapVersion = "5.3.0"
-  private val playAuthVersion = "4.2.0"
-  private val playHealthVersion = "2.0.0"
-  private val playJsonLoggerVersion = "3.0.0"
-  private val playUrlBindersVersion = "2.0.0"
-  private val playConfigVersion = "3.0.0"
-  private val domainVersion = "4.0.0"
-  private val hmrcTestVersion = "2.0.0"
+  private val microserviceBootstrapVersion = "4.4.0"
+  private val playAuthVersion = "3.4.0"
+  private val playHealthVersion = "1.1.0"
+  private val playJsonLoggerVersion = "2.1.1"
+  private val playUrlBindersVersion = "1.1.0"
+  private val playConfigVersion = "2.1.0"
+  private val domainVersion = "3.7.0"
+  private val hmrcTestVersion = "1.9.0"
   private val scalaTestVersion = "2.2.6"
   private val pegdownVersion = "1.6.0"
 
@@ -29,7 +32,7 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "play-health" % playHealthVersion,
     "uk.gov.hmrc" %% "play-url-binders" % playUrlBindersVersion,
     "uk.gov.hmrc" %% "play-config" % playConfigVersion,
-    "uk.gov.hmrc" %% "logback-json-logger" % playJsonLoggerVersion,
+    "uk.gov.hmrc" %% "play-json-logger" % playJsonLoggerVersion,
     "uk.gov.hmrc" %% "domain" % domainVersion
   )
 

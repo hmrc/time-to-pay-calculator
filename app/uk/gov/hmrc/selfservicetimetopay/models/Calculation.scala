@@ -22,7 +22,8 @@ case class Calculation(liabilities: Seq[Liability], initialPayment: BigDecimal, 
   var initialPaymentRemaining: BigDecimal = 0
 
   def applyInitialPaymentToDebt(debtAmount: BigDecimal): BigDecimal = debtAmount match {
-    case amt if amt <= initialPaymentRemaining =>  initialPaymentRemaining = initialPaymentRemaining - debtAmount; 0
+    case amt if amt <= initialPaymentRemaining => initialPaymentRemaining = initialPaymentRemaining - debtAmount; 0
     case amt => val remainingDebt = amt - initialPaymentRemaining; initialPaymentRemaining = 0; remainingDebt
   }
 }
+
