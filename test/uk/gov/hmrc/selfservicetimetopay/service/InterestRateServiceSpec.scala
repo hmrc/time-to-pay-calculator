@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.giv.hmrc.selfservicetimetopay.service
+package uk.gov.hmrc.selfservicetimetopay.service
 
 import java.io.FileNotFoundException
 import java.time.LocalDate
