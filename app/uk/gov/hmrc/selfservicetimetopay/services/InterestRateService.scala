@@ -33,7 +33,7 @@ trait InterestRateService {
   val source: Source
   val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE:dd MMM yyyy")
 
-  lazy val rates: Seq[InterestRate] = streamInterestRates(source)
+  lazy val rates: Seq[InterestRate] = streamInterestRates()
 
   private val interestRateConsumer = { (rates: Seq[InterestRate], line: String) =>
     line.split(",").toSeq match {
@@ -44,7 +44,7 @@ trait InterestRateService {
     }
   }
 
-  private def streamInterestRates(source: Source): Seq[InterestRate] = {
+  private val streamInterestRates: () => Seq[InterestRate] = { () =>
     try {
       source.getLines().foldLeft(Seq[InterestRate]())(interestRateConsumer)
     } catch {

@@ -28,7 +28,7 @@ import scala.io.Source
 class InterestRateServiceSpec extends UnitSpec with WithFakeApplication {
 
   case class IRS(filename: String) extends InterestRateService {
-    override val source = Source.fromFile(filename)
+    override val source = Source.fromInputStream(getClass.getResourceAsStream(filename))
   }
 
   "The InterestRateService" should {
@@ -36,8 +36,7 @@ class InterestRateServiceSpec extends UnitSpec with WithFakeApplication {
       ("file", "type"),
       ("/nullPointer-interestRates.csv", classOf[IndexOutOfBoundsException]),
       ("/dateError-interestRates.csv", classOf[DateTimeParseException]),
-      ("/decimalError-interestRates.csv", classOf[NumberFormatException]),
-      ("/invalid-fileName.csv", classOf[FileNotFoundException]))
+      ("/decimalError-interestRates.csv", classOf[NumberFormatException]))
 
     forAll(exceptionProducingFiles) { (name, exType) =>
       s"Throw a $exType for an input filename $name" in {
