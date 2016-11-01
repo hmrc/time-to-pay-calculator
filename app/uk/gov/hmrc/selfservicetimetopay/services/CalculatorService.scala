@@ -21,6 +21,7 @@ import java.time.LocalDate
 import play.api.Logger._
 import uk.gov.hmrc.selfservicetimetopay.models._
 
+import scala.math.BigDecimal.RoundingMode
 import scala.math.BigDecimal.RoundingMode.{FLOOR, HALF_UP}
 
 object CalculatorService extends CalculatorService {
@@ -81,7 +82,7 @@ trait CalculatorService {
   }
 
   def buildSchedule(calculation: Calculation): PaymentSchedule = {
-    val totalInterest = calculation.liabilities.map(processLiability(calculation).andThen(amortizedInterest(calculation))).sum
+    val totalInterest = calculation.liabilities.map(processLiability(calculation).andThen(amortizedInterest(calculation))).sum.setScale(2, RoundingMode.HALF_UP)
 
     val amountToPay = calculation.liabilities.map(_.amount).sum
 
@@ -89,8 +90,8 @@ trait CalculatorService {
     val instalmentPaymentDates = durationService.getRepaymentDates(calculation.startDate, calculation.endDate)
     val numberOfInstalments = instalmentPaymentDates.size
 
-    val instalmentPayment = totalForInstalmentPayment / numberOfInstalments
-    val finalPayment = totalForInstalmentPayment - instalmentPayment * numberOfInstalments - 1
+    val instalmentPayment = (totalForInstalmentPayment / numberOfInstalments).setScale(2, RoundingMode.HALF_UP)
+    val finalPayment = (totalForInstalmentPayment - instalmentPayment * (numberOfInstalments - 1)).setScale(2, RoundingMode.HALF_UP)
 
     val instalments: Seq[Instalment] = instalmentPaymentDates.map { paymentDate =>
 
@@ -114,8 +115,8 @@ trait CalculatorService {
   private def flatInterest(calculation: Calculation): (Liability) => BigDecimal = { l =>
     val numberOfDays = durationService.getDaysBetween(l.dueDate, calculation.startDate)
     val rate = l.rate.map(_.rate).getOrElse(BigDecimal(0))
-    val percentageOfYear = numberOfDays / l.dueDate.lengthOfYear()
-    val interestToPay = l.amount * rate * percentageOfYear / ONE_HUNDRED
+    val fractionOfYear = BigDecimal(numberOfDays) / BigDecimal(l.dueDate.lengthOfYear())
+    val interestToPay = (l.amount * rate * fractionOfYear / 100).setScale(2, RoundingMode.HALF_UP)
 
     logger.info(s"Liability: £${l.amount}\t${l.dueDate}\t-\t${calculation.startDate}\t@\t$rate\tover\t$numberOfDays\tdays =\t£$interestToPay (simple)")
 

@@ -24,12 +24,15 @@ trait DurationService {
   def getDaysBetween(startDate: LocalDate, endDate: LocalDate): Long = calculatePeriod(startDate, endDate, DAYS, inclusive = false)
 
   def getRepaymentDates(startDate: LocalDate, endDate: LocalDate): Seq[LocalDate] = {
+    if(startDate.isAfter(endDate)) {
+      throw new IllegalArgumentException("Start date must be BEFORE end date")
+    }
     val firstPaymentDate = startDate match {
       case d if d.getDayOfMonth == 1 => startDate
       case _ => startDate.plusMonths(1).withDayOfMonth(1)
     }
 
-    Iterator.iterate(firstPaymentDate)(_ plusMonths 1).takeWhile(_ isBefore endDate).toSeq
+    Iterator.iterate(firstPaymentDate)(_ plusMonths 1).takeWhile(_.compareTo(endDate) <= 0).toSeq
   }
 
   private def calculatePeriod(startDate: LocalDate, endDate: LocalDate, frequency: ChronoUnit, inclusive: Boolean): Long = {

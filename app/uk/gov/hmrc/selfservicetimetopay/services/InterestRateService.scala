@@ -25,14 +25,15 @@ import uk.gov.hmrc.selfservicetimetopay.models.InterestRate
 import scala.io.Source
 
 object InterestRateService extends InterestRateService {
-  override val filename = "/interestRates.csv"
+  val filename: String = "/interestRates.csv"
+  override val source = Source.fromInputStream(getClass.getResourceAsStream(filename))
 }
 
 trait InterestRateService {
-  val filename: String
+  val source: Source
   val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE:dd MMM yyyy")
 
-  lazy val rates: Seq[InterestRate] = streamInterestRates(filename)
+  lazy val rates: Seq[InterestRate] = streamInterestRates(source)
 
   private val interestRateConsumer = { (rates: Seq[InterestRate], line: String) =>
     line.split(",").toSeq match {
@@ -43,11 +44,11 @@ trait InterestRateService {
     }
   }
 
-  private def streamInterestRates(fileName: String): Seq[InterestRate] = {
+  private def streamInterestRates(source: Source): Seq[InterestRate] = {
     try {
-      Source.fromInputStream(getClass.getResourceAsStream(fileName)).getLines().foldLeft(Seq[InterestRate]())(interestRateConsumer)
+      source.getLines().foldLeft(Seq[InterestRate]())(interestRateConsumer)
     } catch {
-      case e: NullPointerException => throw new FileNotFoundException(fileName)
+      case e: NullPointerException => throw new FileNotFoundException(s"$source")
       case t: Throwable => throw t
     }
   }

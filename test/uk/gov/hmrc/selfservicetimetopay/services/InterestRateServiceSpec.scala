@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.selfservicetimetopay.service
+package uk.gov.hmrc.selfservicetimetopay.services
 
 import java.io.FileNotFoundException
 import java.time.LocalDate
@@ -22,11 +22,14 @@ import java.time.format.DateTimeParseException
 
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
-import uk.gov.hmrc.selfservicetimetopay.services.InterestRateService
+
+import scala.io.Source
 
 class InterestRateServiceSpec extends UnitSpec with WithFakeApplication {
 
-  case class IRS(override val filename: String) extends InterestRateService
+  case class IRS(filename: String) extends InterestRateService {
+    override val source = Source.fromFile(filename)
+  }
 
   "The InterestRateService" should {
     val exceptionProducingFiles = Table(
