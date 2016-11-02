@@ -18,11 +18,11 @@ package uk.gov.hmrc.selfservicetimetopay
 
 import java.time.LocalDate
 
+import play.api.data.validation.ValidationError
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
 import play.api.libs.json._
 
-/**
-  * Created by andrew on 31/10/16.
-  */
 package object models {
   implicit val localDateFormat = new Format[LocalDate] {
     override def reads(json: JsValue): JsResult[LocalDate] =
@@ -33,7 +33,20 @@ package object models {
 
   implicit val formatIR = Json.format[InterestRate]
   implicit val formatL = Json.format[Liability]
-  implicit val formatC = Json.format[Calculation]
+
+
+  def minSeqLength[T](length: Int)(implicit anySeqReads: Reads[Seq[T]]) = Reads[Seq[T]] { js =>
+    anySeqReads.reads(js).filter(ValidationError("error.minLength", length))(_.size >= length)
+  }
+
+  implicit val calculationReads: Reads[Calculation] = (
+    (JsPath \ "liabilities").read[Seq[Liability]](minSeqLength[Liability](1)) and
+    (JsPath \ "initialPayment").read[BigDecimal](min(BigDecimal(0))) and
+    (JsPath \ "startDate").read[LocalDate] and
+    (JsPath \ "endDate").read[LocalDate] and
+    (JsPath \ "paymentFrequency").read[String]
+  ) (Calculation.apply _)
+
   implicit val formatI = Json.format[Instalment]
   implicit val formatPS = Json.format[PaymentSchedule]
 }

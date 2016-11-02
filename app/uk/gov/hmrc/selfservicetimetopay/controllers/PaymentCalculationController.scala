@@ -23,7 +23,6 @@ import uk.gov.hmrc.selfservicetimetopay.models._
 import uk.gov.hmrc.selfservicetimetopay.services.CalculatorService
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
 
 trait PaymentCalculationController extends BaseController {
 

@@ -41,7 +41,7 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
     )
 
     forAll(table) { (id, liabilities, rate, startDate, endDate, initialPayment, repaymentCount, amountToPay, totalInterest, regularAmount, finalAmount) =>
-      s"calculate interest for $repaymentCount months at $rate% for scenario #$id" in {
+      s"calculate interest for $repaymentCount months at $rate% for scenario #$id" ignore {
         val rateData = Source.fromChars(rate.toCharArray)
 
         def mockIRService = MockInterestRateService(source = rateData)
