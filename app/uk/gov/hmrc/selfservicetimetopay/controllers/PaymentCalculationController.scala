@@ -16,16 +16,25 @@
 
 package uk.gov.hmrc.selfservicetimetopay.controllers
 
-import uk.gov.hmrc.play.microservice.controller.BaseController
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
+import play.api.libs.json._
 import play.api.mvc._
+import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.selfservicetimetopay.models._
+import uk.gov.hmrc.selfservicetimetopay.services.CalculatorService
+
 import scala.concurrent.Future
 
-object MicroserviceHelloWorld extends MicroserviceHelloWorld
+trait PaymentCalculationController extends BaseController {
 
-trait MicroserviceHelloWorld extends BaseController {
+  val calculatorService: CalculatorService
 
-	def hello() = Action.async { implicit request =>
-		Future.successful(Ok("Hello world"))
-	}
+  def generate() = Action.async(parse.json) { implicit request =>
+    withJsonBody[Calculation] { calculation =>
+      Future.successful(Ok(Json.toJson(calculatorService.generateMultipleSchedules(calculation))))
+    }
+  }
+}
+
+object PaymentCalculationController extends PaymentCalculationController {
+  override val calculatorService = CalculatorService
 }

@@ -17,7 +17,7 @@ private object AppDependencies {
   private val microserviceBootstrapVersion = "4.4.0"
   private val playAuthVersion = "3.4.0"
   private val playHealthVersion = "1.1.0"
-  private val playJsonLoggerVersion = "2.1.1"  
+  private val playJsonLoggerVersion = "2.1.1"
   private val playUrlBindersVersion = "1.1.0"
   private val playConfigVersion = "2.1.0"
   private val domainVersion = "3.7.0"
@@ -25,11 +25,7 @@ private object AppDependencies {
   private val scalaTestVersion = "2.2.6"
   private val pegdownVersion = "1.6.0"
 
-  private val playReactivemongoVersion = "4.8.0"
-
   val compile = Seq(
-    "uk.gov.hmrc" %% "play-reactivemongo" % playReactivemongoVersion,
-
     ws,
     "uk.gov.hmrc" %% "microservice-bootstrap" % microserviceBootstrapVersion,
     "uk.gov.hmrc" %% "play-authorisation" % playAuthVersion,
@@ -51,7 +47,8 @@ private object AppDependencies {
         "uk.gov.hmrc" %% "hmrctest" % hmrcTestVersion % scope,
         "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
-        "com.typesafe.play" %% "play-test" % PlayVersion.current % scope
+        "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
+        "com.github.tomakehurst" % "wiremock" % "1.58" % scope
       )
     }.test
   }
@@ -65,7 +62,8 @@ private object AppDependencies {
         "uk.gov.hmrc" %% "hmrctest" % hmrcTestVersion % scope,
         "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
-        "com.typesafe.play" %% "play-test" % PlayVersion.current % scope
+        "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
+        "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope
       )
     }.test
   }

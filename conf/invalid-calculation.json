@@ -1,0 +1,35 @@
+{
+  "interestRate": 2.4,
+  "liabilities": [
+    {
+      "baseAmount": {
+        "amount": 2000,
+        "currency": "GBP"
+      },
+      "dueDate": "2016-01-31",
+      "accruedInterest": {
+        "currency": "GBP",
+        "amount": 100
+      }
+    },
+    {
+      "baseAmount": {
+        "amount": 219,
+        "currency": "GBP"
+      },
+      "dueDate": "2016-01-31",
+      "accruedInterest": {
+        "currency": "GBP",
+        "amount": 150
+      }
+    }
+  ],
+  "initialPayment": {
+    "amount": 1000,
+    "currency": "GBP"
+  },
+  "initialPaymentDate": "2017-01-31",
+  "startDate": "2017-01-31",
+  "endDate": "2017-01-31",
+  "paymentFrequency": "1TYF"
+}

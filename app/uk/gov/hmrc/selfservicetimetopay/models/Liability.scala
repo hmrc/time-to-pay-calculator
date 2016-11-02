@@ -14,28 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.selfservicetimetopay.controllers
+package uk.gov.hmrc.selfservicetimetopay.models
 
-import play.api.http.Status
-import play.api.test.FakeRequest
-import play.api.http.Status
-import play.api.test.FakeRequest
-import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.play.test.WithFakeApplication
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import java.time.LocalDate
 
+case class Liability(`type`: String, amount: BigDecimal, interestAccrued: BigDecimal, interestCalculationDate: LocalDate, dueDate: LocalDate, endDate: Option[LocalDate] = None, rate: Option[InterestRate] = None)
 
-class MicroserviceHelloWorldControllerSpec extends UnitSpec with WithFakeApplication{
-
-  val fakeRequest = FakeRequest("GET", "/")
-
-
-  "GET /" should {
-    "return 200" in {
-      val result = MicroserviceHelloWorld.hello()(fakeRequest)
-      status(result) shouldBe Status.OK
-    }
+object Liability {
+  def partialOf(l: Liability, startDate: LocalDate, endDate: LocalDate, rate: InterestRate): Liability = {
+    Liability(l.`type`, l.amount, l.interestAccrued, l.interestCalculationDate, startDate, Some(endDate), Some(rate))
   }
-
-
 }
