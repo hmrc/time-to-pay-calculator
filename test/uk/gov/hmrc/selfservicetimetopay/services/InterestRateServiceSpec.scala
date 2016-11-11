@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.selfservicetimetopay.services
 
-import java.io.FileNotFoundException
 import java.time.LocalDate
+import java.time.LocalDate._
 import java.time.format.DateTimeParseException
 
 import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -39,9 +39,11 @@ class InterestRateServiceSpec extends UnitSpec with WithFakeApplication {
       ("/decimalError-interestRates.csv", classOf[NumberFormatException]))
 
     forAll(exceptionProducingFiles) { (name, exType) =>
+      val service = IRS(name)
+
       s"Throw a $exType for an input filename $name" in {
         try {
-          IRS(name).getRateAt(LocalDate.now)
+          service rateOn now
         } catch {
           case ex: Throwable => ex.getClass shouldBe exType
         }
@@ -67,7 +69,7 @@ class InterestRateServiceSpec extends UnitSpec with WithFakeApplication {
 
     forAll(dateChecks) { (date, rate) =>
       s"return a rate of $rate for $date" in {
-        InterestRateService.getRateAt(date).map(_.rate).orNull shouldBe rate
+        InterestRateService.rateOn(date).map(_.rate).orNull shouldBe rate
       }
     }
 

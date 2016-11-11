@@ -20,6 +20,7 @@ import java.io.FileNotFoundException
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+import play.api.Logger
 import uk.gov.hmrc.selfservicetimetopay.models.InterestRate
 
 import scala.io.Source
@@ -53,20 +54,25 @@ trait InterestRateService {
     }
   }
 
-  def getRateAt(date: LocalDate): Option[InterestRate] = {
+  def rateOn(date: LocalDate): Option[InterestRate] = {
     rates.find(rate => rate.startDate.compareTo(date) <= 0)
   }
+
+  implicit def orderingLocalDate: Ordering[LocalDate] = Ordering.fromLessThan(_ isBefore _)
+  implicit def orderingInterestRate: Ordering[InterestRate] = Ordering.by(_.startDate)
 
   def getRatesForPeriod(startDate: LocalDate, endDate: LocalDate): Seq[InterestRate] = {
     rates.filter { interestRate =>
       (interestRate.startDate.compareTo(endDate) <= 0) &&
         (interestRate.endDate.getOrElse(LocalDate.MAX).compareTo(startDate) >= 0)
-    }.flatMap { rate =>
+    }.sorted.flatMap { rate =>
       val startYear = Seq(rate.startDate.getYear, startDate.getYear).max
       val endYear = Seq(rate.endDate.getOrElse(LocalDate.MAX).getYear, endDate.getYear).min
 
       Range.inclusive(startYear, endYear).map { year =>
-        InterestRate(LocalDate.of(year, 1, 1), Some(LocalDate.of(year, 12, 31)), rate.rate)
+        val ir = InterestRate(Seq(LocalDate.of(year, 1, 1), startDate, rate.startDate).max, Some(Seq(LocalDate.of(year, 12, 31), endDate, rate.endDate.getOrElse(endDate)).min), rate.rate)
+        Logger.info(s"Rate: $ir")
+        ir
       }
     }
   }

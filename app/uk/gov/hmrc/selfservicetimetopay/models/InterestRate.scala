@@ -17,11 +17,16 @@
 package uk.gov.hmrc.selfservicetimetopay.models
 
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 object InterestRate {
   object NONE extends InterestRate(LocalDate.MIN, None, 0)
 }
 
 case class InterestRate(startDate: LocalDate, endDate: Option[LocalDate], rate: BigDecimal) {
-  def dailyRate = rate / startDate.lengthOfYear
+  def dailyRate = rate / ChronoUnit.DAYS.between(startDate, endDate.getOrElse(LocalDate.of(startDate.getYear, 12, 31)))
+
+  def containsDate(date: LocalDate): Boolean = {
+    date.compareTo(startDate) >= 0 && (date.compareTo(endDate.getOrElse(LocalDate.MAX)) <= 0)
+  }
 }
