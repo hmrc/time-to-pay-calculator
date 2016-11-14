@@ -31,8 +31,9 @@ package object models {
     override def writes(o: LocalDate): JsValue = Json.toJson(o.toString)
   }
 
-  implicit val formatIR = Json.format[InterestRate]
-  implicit val formatL = Json.format[Liability]
+  implicit val formatInterestRate = Json.format[InterestRate]
+  implicit val formatInterest = Json.format[Interest]
+  implicit val formatDebit = Json.format[Debit]
 
 
   def minSeqLength[T](length: Int)(implicit anySeqReads: Reads[Seq[T]]) = Reads[Seq[T]] { js =>
@@ -40,13 +41,13 @@ package object models {
   }
 
   implicit val calculationReads: Reads[Calculation] = (
-    (JsPath \ "liabilities").read[Seq[Liability]](minSeqLength[Liability](1)) and
+    (JsPath \ "debits").read[Seq[Debit]](minSeqLength[Debit](1)) and
     (JsPath \ "initialPayment").read[BigDecimal](min(BigDecimal(0))) and
     (JsPath \ "startDate").read[LocalDate] and
     (JsPath \ "endDate").read[LocalDate] and
     (JsPath \ "paymentFrequency").read[String]
   ) (Calculation.apply _)
 
-  implicit val formatI = Json.format[Instalment]
-  implicit val formatPS = Json.format[PaymentSchedule]
+  implicit val formatInstalment = Json.format[Instalment]
+  implicit val formatPaymentSchedule = Json.format[PaymentSchedule]
 }

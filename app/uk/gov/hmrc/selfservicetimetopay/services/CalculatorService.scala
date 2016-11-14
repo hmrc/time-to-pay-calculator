@@ -30,32 +30,38 @@ class CalculatorService(interestService: InterestRateService, durationService: D
   val PRECISION_2DP = 2
   val PRECISION_10DP = 10
 
-  private def processLiability(calculation: Calculation): (Liability) => Liability = { liability =>
-    interestService.getRatesForPeriod(liability.dueDate, calculation.endDate).map {
-      case rate if rate.containsDate(liability.dueDate) && rate.containsDate(calculation.endDate) =>
-        Liability.partialOf(liability, liability.dueDate, calculation.endDate, rate)
-      case rate if rate.containsDate(liability.dueDate) && !rate.containsDate(calculation.endDate) =>
-        Liability.partialOf(liability, liability.dueDate, rate.endDate.get, rate)
-      case rate if !rate.containsDate(liability.dueDate) && rate.containsDate(calculation.endDate) =>
-        Liability.partialOf(liability, rate.startDate, calculation.endDate, rate)
-      case rate =>
-        Liability.partialOf(liability, rate.startDate, rate.endDate.get, rate)
+  val debitDueAndCalculationDatesWithinRate = (true, true)
+  val debitDueDateWithinRate = (true, false)
+  val calculationDateWithinRate = (false, true)
+
+  private def processLiability(calculation: Calculation): (Debit) => Debit = { liability =>
+    interestService.getRatesForPeriod(liability.dueDate, calculation.endDate).map { rate =>
+      (rate.containsDate(liability.dueDate), rate.containsDate(calculation.endDate)) match {
+        case `debitDueAndCalculationDatesWithinRate` =>
+          Debit.partialOf(liability, liability.dueDate, calculation.endDate, rate)
+        case `debitDueDateWithinRate` =>
+          Debit.partialOf(liability, liability.dueDate, rate.endDate.get, rate)
+        case `calculationDateWithinRate` =>
+          Debit.partialOf(liability, rate.startDate, calculation.endDate, rate)
+        case _ =>
+          Debit.partialOf(liability, rate.startDate, rate.endDate.get, rate)
+      }
     }.reduce(combine(calculation))
   }
 
-  private def combine(calculation: Calculation) = { (l1: Liability, l2: Liability) =>
-    val interest = flatInterest(calculation).apply(l2)
-    val dayRate1 = l1.rate.map(_.dailyRate).getOrElse(BigDecimal(0))
-    val dayRate2 = l2.rate.map(_.dailyRate).getOrElse(BigDecimal(0))
+  private def combine(calculation: Calculation) = { (d1: Debit, d2: Debit) =>
+    val interest = flatInterest(calculation).apply(d2)
+    val dayRate1 = d1.rate.map(_.dailyRate).getOrElse(BigDecimal(0))
+    val dayRate2 = d2.rate.map(_.dailyRate).getOrElse(BigDecimal(0))
 
-    val daysAtRate1 = durationService.getDaysBetween(l1.dueDate, l2.dueDate.minusDays(1))
-    val daysAtRate2 = durationService.getDaysBetween(l2.dueDate, l2.endDate.getOrElse(l2.dueDate))
+    val daysAtRate1 = durationService.getDaysBetween(d1.dueDate, d2.dueDate.minusDays(1))
+    val daysAtRate2 = durationService.getDaysBetween(d2.dueDate, d2.endDate.getOrElse(d2.dueDate))
 
-    val rate = (dayRate1 * daysAtRate1) + (dayRate2 * daysAtRate2) * l2.dueDate.lengthOfYear() / (daysAtRate1 + daysAtRate2)
+    val rate = ( ( (dayRate1 * daysAtRate1) + (dayRate2 * daysAtRate2) ) / (daysAtRate1 + daysAtRate2) ) * ((d1.dueDate.lengthOfYear() + d2.dueDate.lengthOfYear()) / 2)
 
-    val combinedRate = InterestRate(l1.dueDate, l2.endDate, rate)
+    val combinedRate = InterestRate(d1.dueDate, d2.endDate, rate)
 
-    Liability(l1.`type`, l1.amount, l1.interestAccrued + interest, calculation.startDate, l1.dueDate, l2.endDate, Some(combinedRate))
+    Debit(d1.originCode, d1.amount, Interest(d1.interest.amountAccrued + interest, calculation.startDate), d1.dueDate, d2.endDate, Some(combinedRate))
   }
 
   def buildSchedule(calculation: Calculation): PaymentSchedule = {
@@ -72,7 +78,6 @@ class CalculatorService(interestService: InterestRateService, durationService: D
     val finalPayment = (totalForInstalmentPayment - instalmentPayment * (numberOfInstalments - 1)).setScale(2, RoundingMode.HALF_UP)
 
     val instalments: Seq[Instalment] = instalmentPaymentDates.map { paymentDate =>
-
       val instalment = paymentDate match {
         case d if d == instalmentPaymentDates.last => Instalment(d, finalPayment)
         case d => Instalment(d, instalmentPayment)
@@ -90,8 +95,8 @@ class CalculatorService(interestService: InterestRateService, durationService: D
     Seq(buildSchedule(calculation))
   }
 
-  private def flatInterest(calculation: Calculation): (Liability) => BigDecimal = { l =>
-    val startDate = Seq(l.dueDate, l.interestCalculationDate).max
+  private def flatInterest(calculation: Calculation): (Debit) => BigDecimal = { l =>
+    val startDate = Seq(l.dueDate, l.interest.calculationDate).max
     val endDate = Seq(calculation.startDate.minusDays(1), l.endDate.getOrElse(calculation.startDate)).min
 
     if(startDate.isAfter(endDate)) {
@@ -102,7 +107,7 @@ class CalculatorService(interestService: InterestRateService, durationService: D
       val fractionOfYear = BigDecimal(numberOfDays) / BigDecimal(l.dueDate.lengthOfYear())
       val interestToPay = (l.amount * rate * fractionOfYear / 100).setScale(2, RoundingMode.HALF_UP)
 
-      logger.info(s"Liability: £${l.amount}\t$startDate\t-\t$endDate\t@\t$rate\tover\t$numberOfDays\tdays =\t£$interestToPay (simple)")
+      logger.info(s"Debit: £${l.amount}\t$startDate\t-\t$endDate\t@\t$rate\tover\t$numberOfDays\tdays =\t£$interestToPay (simple)")
 
       interestToPay
     }
@@ -110,13 +115,13 @@ class CalculatorService(interestService: InterestRateService, durationService: D
 
   implicit def orderingLocalDate: Ordering[LocalDate] = Ordering.fromLessThan(_ isBefore _)
 
-  private def amortizedInterest(calculation: Calculation) = { l: Liability =>
-    val startDate = Seq(calculation.startDate, l.dueDate).max
+  private def amortizedInterest(calculation: Calculation) = { debit: Debit =>
+    val startDate = Seq(calculation.startDate, debit.dueDate).max
 
-    val rate = BigDecimal(2.75) //l.rate.map(_.rate).getOrElse(BigDecimal(0))
-    val endDate = l.endDate.getOrElse(startDate)
+    val rate = debit.rate.map(_.rate).getOrElse(BigDecimal(0))
+    val endDate = debit.endDate.getOrElse(startDate)
     val numberOfDays = durationService.getDaysBetween(startDate, endDate)
-    val principal = calculation.applyInitialPaymentToDebt(l.amount)
+    val principal = calculation.applyInitialPaymentToDebt(debit.amount)
 
     val rateForPeriod = rate / MONTHS_IN_YEAR / 100
     val numberOfPeriods = durationService.getRepaymentDates(startDate, endDate).size
@@ -128,8 +133,8 @@ class CalculatorService(interestService: InterestRateService, durationService: D
     val totalRepayable = (amountPerPeriod * numberOfPeriods).setScale(PRECISION_2DP, HALF_UP)
     val interestToPay = (totalRepayable - principal).setScale(PRECISION_2DP, FLOOR)
 
-    logger.info(s"Liability: £$principal\t$startDate\t-\t$endDate\t@\t$rate\tover\t$numberOfDays\tdays =\t£$interestToPay (amortized), total payable £$totalRepayable")
+    logger.info(s"Debit: £$principal\t$startDate\t-\t$endDate\t@\t$rate\tover\t$numberOfDays\tdays =\t£$interestToPay (amortized), total payable £$totalRepayable")
 
-    interestToPay + l.interestAccrued
+    interestToPay + debit.interest.amountAccrued
   }
 }
