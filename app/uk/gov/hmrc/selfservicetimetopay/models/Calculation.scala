@@ -18,7 +18,7 @@ package uk.gov.hmrc.selfservicetimetopay.models
 
 import java.time.LocalDate
 
-case class Calculation(liabilities: Seq[Debit], initialPayment: BigDecimal, startDate: LocalDate, endDate: LocalDate, paymentFrequency: String) {
+case class Calculation(debits: Seq[Debit], initialPayment: BigDecimal, startDate: LocalDate, endDate: LocalDate, paymentFrequency: String) {
   var initialPaymentRemaining: BigDecimal = initialPayment
 
   def applyInitialPaymentToDebt(debtAmount: BigDecimal): BigDecimal = debtAmount match {
