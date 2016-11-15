@@ -18,9 +18,19 @@ package uk.gov.hmrc.selfservicetimetopay.models
 
 import java.time.LocalDate
 
-case class PaymentSchedule(initialPayment: BigDecimal, amountToPay: BigDecimal, instalmentBalance: BigDecimal, totalInterestCharged: BigDecimal, totalPayable: BigDecimal, instalments: Seq[Instalment]) {
+case class PaymentSchedule(startDate: LocalDate,
+                           endDate: LocalDate,
+                           initialPayment: BigDecimal,
+                           amountToPay: BigDecimal,
+                           instalmentBalance: BigDecimal,
+                           totalInterestCharged: BigDecimal,
+                           totalPayable: BigDecimal,
+                           instalments: Seq[Instalment]) {
   override def toString: String =
     s"""
+       |\tStart Date:         $startDate
+       |\tEnd Date:           $endDate
+       |
        |\tInitial Debit:      $amountToPay
        |\tInitial payment:    $initialPayment
        |\tTotal interest:     $totalInterestCharged

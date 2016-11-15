@@ -50,9 +50,9 @@ class CalculatorService(interestService: InterestRateService, durationService: D
     val finalPayment = (totalForInstalmentPayment - instalmentPayment * (numberOfInstalments - 1)).setScale(2, HALF_UP)
 
     instalmentPaymentDates.init.foldRight(
-      PaymentSchedule(calculation.initialPayment, amountToPay, amountToPay - calculation.initialPayment, totalInterest, amountToPay + totalInterest, Seq(Instalment(instalmentPaymentDates.last, finalPayment)))
+      PaymentSchedule(calculation.startDate, calculation.endDate, calculation.initialPayment, amountToPay, amountToPay - calculation.initialPayment, totalInterest, amountToPay + totalInterest, Seq(Instalment(instalmentPaymentDates.last, finalPayment)))
     ) { (d, s) =>
-      PaymentSchedule(s.initialPayment, s.amountToPay, s.instalmentBalance, s.totalInterestCharged, s.totalPayable, Instalment(d, instalmentPayment) +: s.instalments)
+      PaymentSchedule(s.startDate, s.endDate, s.initialPayment, s.amountToPay, s.instalmentBalance, s.totalInterestCharged, s.totalPayable, Instalment(d, instalmentPayment) +: s.instalments)
     }
   }
 
