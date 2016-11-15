@@ -91,9 +91,9 @@ class CalculatorService(interestService: InterestRateService, durationService: D
     if (startDate.isAfter(endDate)) {
       BigDecimal(0)
     } else {
-      val numberOfDays = durationService.getDaysBetween(startDate, endDate)
+      val numberOfDays = BigDecimal(durationService.getDaysBetween(startDate, endDate))
       val rate = l.rate.map(_.rate).getOrElse(BigDecimal(0))
-      val fractionOfYear = BigDecimal(numberOfDays) / BigDecimal(l.dueDate.lengthOfYear())
+      val fractionOfYear = numberOfDays / BigDecimal(l.dueDate.lengthOfYear())
       val interestToPay = (l.amount * rate * fractionOfYear / 100).setScale(2, HALF_UP)
 
       logger.info(s"Debit: £${l.amount}\t$startDate\t-\t$endDate\t@\t$rate\tover\t$numberOfDays\tdays =\t£$interestToPay (simple)")
