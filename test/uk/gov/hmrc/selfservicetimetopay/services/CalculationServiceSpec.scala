@@ -45,8 +45,8 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
                 new debit( 375.80, "2013-07-01", "2013-07-01"),
                 new debit( 388.40, "2015-01-01", "2015-01-01"),
                 new debit( 607.40, "2016-01-01", "2016-01-01")),  LocalDate.parse("2016-09-02"),  LocalDate.parse("2027-07-02"),  385.00,                     130,              4870.60,        1140.10,           35.00,            35.00),
-      ("C", Seq(new debit(1784.53, "2016-07-31", "2016-07-31")),  LocalDate.parse("2016-09-09"),  LocalDate.parse("2017-09-29"),  149.18,                     13,               1811.45,          26.92,          149.18,           149.18),
-      ("CESA-1", Seq(new debit(5000.0, "2016-09-03", "2016-09-03")), LocalDate.parse("2016-07-10"), LocalDate.parse("2017-06-30"), 1000.0,                    11,               5025.77,          25.77,           325.76,          325.68)
+      ("C", Seq(new debit(1784.53, "2016-07-31", "2016-07-31")),  LocalDate.parse("2016-09-09"),  LocalDate.parse("2017-09-29"),  149.18,                      13,              1811.45,          26.92,          149.18,           149.18),
+      ("CESA-1", Seq(new debit(5000.0, "2016-09-03", "2016-09-03")), LocalDate.parse("2016-09-10"), LocalDate.parse("2017-03-10"),  1500.0,                      7,              5025.77,          25.77,           325.76,          325.68)
     )
 
     forAll(table) { (id, debits, startDate, endDate, initialPayment, repaymentCount, amountToPay, totalInterest, regularAmount, finalAmount) =>
