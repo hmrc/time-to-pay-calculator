@@ -33,9 +33,9 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
 
   "The calculator service" should {
     val table = Table(
-      ("id", "debits",                                           "startDate",                    "endDate",                      "initialPayment",           "repaymentCount", "amountToPay",  "totalInterest",  "regularAmount",  "finalAmount"),
+      ("id", "debits",                                           "startDate",                    "endDate",                      "firstPaymentDate",            "initialPayment",           "repaymentCount", "amountToPay",  "totalInterest",  "regularAmount",  "finalAmount"),
       ("A", Seq(new debit( 100.00, "2014-03-23", "2014-03-23"),
-                new debit( 300.00, "2014-07-10", "2014-07-10")),  LocalDate.parse("2016-08-30"),  LocalDate.parse("2017-11-09"),   30.00,                     15,               430.68,           30.68,           30.00,            30.00),
+                new debit( 300.00, "2014-07-10", "2014-07-10")),  LocalDate.parse("2016-08-30"),  LocalDate.parse("2017-11-09"), LocalDate.parse("2016-08-30"),    30.00,                     15,               430.68,           30.68,           30.00,            30.00),
       ("B", Seq(Debit("POA1", 0.0, Interest(406.89, LocalDate.now), LocalDate.now),
                 new debit(1722.10, "2013-01-31", "2013-01-31"),
                 new debit(  87.00, "2013-04-25", "2013-04-25"),
@@ -44,12 +44,12 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
                 new debit( 375.80, "2013-01-01", "2013-01-01"),
                 new debit( 375.80, "2013-07-01", "2013-07-01"),
                 new debit( 388.40, "2015-01-01", "2015-01-01"),
-                new debit( 607.40, "2016-01-01", "2016-01-01")),  LocalDate.parse("2016-09-02"),  LocalDate.parse("2027-07-02"),  385.00,                     130,              4870.60,        1140.10,           35.00,            35.00),
-      ("C", Seq(new debit(1784.53, "2016-07-31", "2016-07-31")),  LocalDate.parse("2016-09-09"),  LocalDate.parse("2017-09-29"),  149.18,                      13,              1811.45,          26.92,          149.18,           149.18),
-      ("CESA-1", Seq(new debit(5000.0, "2016-09-03", "2016-09-03")), LocalDate.parse("2016-09-10"), LocalDate.parse("2017-03-10"),  1500.0,                      7,              5025.77,          25.77,           325.76,          325.68)
+                new debit( 607.40, "2016-01-01", "2016-01-01")),  LocalDate.parse("2016-09-02"),  LocalDate.parse("2027-07-02"), LocalDate.parse("2016-08-30"),   385.00,                     130,              4870.60,        1140.10,           35.00,            35.00),
+      ("C", Seq(new debit(1784.53, "2016-07-31", "2016-07-31")),  LocalDate.parse("2016-09-09"),  LocalDate.parse("2017-09-29"),  LocalDate.parse("2016-08-30"),  149.18,                      13,              1811.45,          26.92,          149.18,           149.18),
+      ("CESA-1", Seq(new debit(5000.0, "2016-09-03", "2016-09-03")), LocalDate.parse("2016-09-03"), LocalDate.parse("2017-03-10"), LocalDate.parse("2016-09-10"),   1500.0,                     7,              5025.77,          25.77,           325.76,          325.68)
     )
 
-    forAll(table) { (id, debits, startDate, endDate, initialPayment, repaymentCount, amountToPay, totalInterest, regularAmount, finalAmount) =>
+    forAll(table) { (id, debits, startDate, endDate, firstPaymentDate, initialPayment, repaymentCount, amountToPay, totalInterest, regularAmount, finalAmount) =>
       s"calculate interest for IDMS scenario $id" in {
         val rates = "Tue:23 Aug 2016,2.75\nTue:29 Sep 2009,3.00"
         val rateData = Source.fromChars(rates.toCharArray)
@@ -57,7 +57,7 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
         def mockIRService = MockInterestRateService(source = rateData)
         def mockService = new CalculatorService(mockIRService, DurationService)
 
-        val calculation = Calculation(debits, initialPayment, startDate, endDate, "MONTHLY")
+        val calculation = Calculation(debits, initialPayment, startDate, endDate, Some(firstPaymentDate), "MONTHLY")
 
         val schedule: PaymentSchedule = mockService.generateMultipleSchedules(calculation).head
 
@@ -101,7 +101,7 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
     
     forAll(realWorldData) { (debits, startDate, endDate, initialPayment, amountToPay, instalmentBalance, totalInterest, totalPayable) =>
       s"calculate interest of $totalInterest for an input debt of $debits to be paid between $startDate and $endDate with an initial payment of $initialPayment" in {
-        val calculation = Calculation(debits, initialPayment, startDate, endDate, "MONTHLY")
+        val calculation = Calculation(debits, initialPayment, startDate, endDate, None, "MONTHLY")
         val schedule = new CalculatorService(InterestRateService, DurationService).generateMultipleSchedules(calculation).head
         schedule.amountToPay shouldBe amountToPay
         schedule.initialPayment shouldBe initialPayment
@@ -119,7 +119,7 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
 
     forAll(instalmentCalcData) { (debits, startDate, endDate, initialPayment, months) =>
       s"generate an instalment plan of $months for a given debt $debits and period from $startDate to $endDate" in {
-        val calculation = Calculation(debits, initialPayment, startDate, endDate, "MONTHLY")
+        val calculation = Calculation(debits, initialPayment, startDate, endDate, None, "MONTHLY")
         val schedule = new CalculatorService(InterestRateService, DurationService).generateMultipleSchedules(calculation).head
 
         schedule.instalments.size shouldBe months

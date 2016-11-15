@@ -37,23 +37,34 @@ class CalculatorService(interestService: InterestRateService, durationService: D
 
   def generateMultipleSchedules(implicit calculation: Calculation) = Seq(buildSchedule).map { s => logger.info(s"Payment Schedule: $s"); s }
 
+  def calculateStagedPayments(overalDebit: Debit)(implicit calculation:Calculation): Seq[Instalment] = {
+    val principal = calculation.applyInitialPaymentToDebt(overalDebit.amount)
+    val repayments = durationService.getRepaymentDates(calculation.getFirstPaymentDate, calculation.endDate)
+    val numberOfPayments = BigDecimal(repayments.size)
+    val monthlyCapitalRepayment = (principal / numberOfPayments).setScale(PRECISION_2DP, HALF_UP)
+
+    repayments.map { r =>
+      val daysInterestToCharge = BigDecimal(durationService.getDaysBetween(calculation.startDate, r))
+      val interest = (monthlyCapitalRepayment * daysInterestToCharge * overalDebit.rate.map(_.dailyRate).getOrElse(BigDecimal(0)) / BigDecimal(100)).setScale(PRECISION_2DP, FLOOR)
+      val ins = Instalment(r, monthlyCapitalRepayment, interest)
+      logger.info(s"Repayment $monthlyCapitalRepayment (${calculation.startDate} - $r) $daysInterestToCharge @ ${overalDebit.rate.map(_.rate).get.setScale(2, HALF_UP)} = $interest")
+      ins
+    }
+  }
+
   def buildSchedule(implicit calculation: Calculation): PaymentSchedule = {
-    val totalInterest = calculation.debits.map {
-      processDebit.andThen(amortizedInterest)
-    }.sum.setScale(2, HALF_UP)
+    val overalDebit = calculation.debits.map {
+      processDebit
+    }.reduce(combineLines)
+
+    val instalments = calculateStagedPayments(overalDebit)
 
     val amountToPay = calculation.debits.map(_.amount).sum
-    val totalForInstalmentPayment = amountToPay - calculation.initialPayment + totalInterest
-    val instalmentPaymentDates = durationService.getRepaymentDates(calculation.startDate, calculation.endDate)
-    val numberOfInstalments = BigDecimal(instalmentPaymentDates.size)
-    val instalmentPayment = (totalForInstalmentPayment / numberOfInstalments).setScale(2, HALF_UP)
-    val finalPayment = (totalForInstalmentPayment - instalmentPayment * (numberOfInstalments - 1)).setScale(2, HALF_UP)
+    val totalInterest = overalDebit.interest.amountAccrued + instalments.map(_.interest).sum
 
-    instalmentPaymentDates.init.foldRight(
-      PaymentSchedule(calculation.startDate, calculation.endDate, calculation.initialPayment, amountToPay, amountToPay - calculation.initialPayment, totalInterest, amountToPay + totalInterest, Seq(Instalment(instalmentPaymentDates.last, finalPayment)))
-    ) { (d, s) =>
-      PaymentSchedule(s.startDate, s.endDate, s.initialPayment, s.amountToPay, s.instalmentBalance, s.totalInterestCharged, s.totalPayable, Instalment(d, instalmentPayment) +: s.instalments)
-    }
+    PaymentSchedule(calculation.startDate, calculation.endDate, calculation.initialPayment, amountToPay,
+      amountToPay - calculation.initialPayment, totalInterest, amountToPay + totalInterest,
+      instalments.init :+ Instalment(instalments.last.paymentDate, instalments.last.amount + totalInterest, instalments.last.interest))
   }
 
   private def processDebit(implicit calculation: Calculation): (Debit) => Debit = { debit =>
@@ -69,6 +80,18 @@ class CalculatorService(interestService: InterestRateService, durationService: D
           Debit.partialOf(debit, rate.startDate, rate.endDate.get, rate)
       }
     }.reduce(combine)
+  }
+
+  private def combineLines(implicit calculation: Calculation) = { (d1: Debit, d2: Debit) =>
+    val rate1 = d1.rate.map(_.rate).getOrElse(BigDecimal(0))
+    val rate2 = d2.rate.map(_.rate).getOrElse(BigDecimal(0))
+
+    val fractionOfYrAtRate1 = BigDecimal(durationService.getDaysBetween(d1.dueDate, d2.dueDate.minusDays(1))) / BigDecimal(d1.dueDate.lengthOfYear())
+    val fractionOfYrAtRate2 = BigDecimal(durationService.getDaysBetween(d2.dueDate, d2.endDate.getOrElse(d2.dueDate))) / BigDecimal(d2.dueDate.lengthOfYear())
+
+    val rate = ((rate1 * fractionOfYrAtRate1) + (rate2 * fractionOfYrAtRate2)) / (fractionOfYrAtRate1 + fractionOfYrAtRate2)
+    val combinedRate = InterestRate(d1.dueDate, d2.endDate, rate)
+    Debit(d1.originCode, d1.amount + d2.amount, Interest(d1.interest.amountAccrued + d2.interest.amountAccrued, calculation.startDate), d1.dueDate, d2.endDate, Some(combinedRate))
   }
 
   private def combine(implicit calculation: Calculation) = { (d1: Debit, d2: Debit) =>
@@ -100,28 +123,5 @@ class CalculatorService(interestService: InterestRateService, durationService: D
 
       interestToPay
     }
-  }
-
-  private def amortizedInterest(implicit calculation: Calculation) = { debit: Debit =>
-    val startDate = Seq(calculation.startDate, debit.dueDate).max
-
-    val rate = debit.rate.map(_.rate).getOrElse(BigDecimal(0))
-    val endDate = debit.endDate.getOrElse(startDate)
-    val numberOfDays = durationService.getDaysBetween(startDate, endDate)
-    val principal = calculation.applyInitialPaymentToDebt(debit.amount)
-
-    val rateForPeriod = rate / MONTHS_IN_YEAR / 100
-    val numberOfPeriods = BigDecimal(durationService.getRepaymentDates(startDate, endDate).size)
-
-    val numerator = rateForPeriod * (1 + rateForPeriod).pow(numberOfPeriods.intValue())
-    val denominator = (1 + rateForPeriod).pow(numberOfPeriods.intValue()) - 1
-
-    val amountPerPeriod = principal * numerator / denominator
-    val totalRepayable = (amountPerPeriod * numberOfPeriods).setScale(PRECISION_2DP, HALF_UP)
-    val interestToPay = (totalRepayable - principal).setScale(PRECISION_2DP, FLOOR)
-
-    logger.info(s"Debit: £$principal\t$startDate\t-\t$endDate\t@\t$rate\tover\t$numberOfDays\tdays =\t£$interestToPay (amortized), total payable £$totalRepayable (+ ${debit.interest.amountAccrued} pre TTP interest)")
-
-    interestToPay + debit.interest.amountAccrued
   }
 }

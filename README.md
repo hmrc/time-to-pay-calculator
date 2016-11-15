@@ -32,28 +32,29 @@ Calculator input model:
 
 | Parameter                                            | Type            | Description                                                            |
 |:----------------------------------------------------:|:---------------:|:----------------------------------------------------------------------:|
-| debits                                               | List[Debit]     | Collection of debits owed                                               |
+| debits                                               | List[Debit]     | Collection of debits owed                                              |
 | initialPayment                                       | BigDecimal      | How much they can pay now                                              |
 | startDate                                            | LocalDate       | The start date of the TTP arrangement                                  |
 | endDate                                              | LocalDate       | The end date of the TTP arrangement                                    |
+| firstPaymentDate                                     | LocalDate       | The date on which the first payment will be taken                      |
 | paymentFrequency            [DAILY\|WEEKLY\|MONTHLY] | String          | The frequency of the instalment payments                               |
 
 
 Debit input model:
 
 | Parameter               | Type       | Description                                                             |
-|-------------------------|------------|-------------------------------------------------------------------------|
+|:-----------------------:|:----------:|:-----------------------------------------------------------------------:|
 | originCode              | String     | The originCode of the debt                                              |
 | amount                  | BigDecimal | The amount owed for that debt                                           |
 | interest                | Interest   | An interest object                                                      |
-| dueDate (optional)    | LocalDate  | The due date of the debt, used to calculate which debt to pay off first |
+| dueDate (optional)      | LocalDate  | The due date of the debt, used to calculate which debt to pay off first |
 
 Interest model:
 
 | Parameter               | Type       | Description                                                             |
-|-------------------------|------------|-------------------------------------------------------------------------|
-| amountAccrued         | BigDecimal | How much interest has been accumulated to date                            |
-| calculationDate       | LocalDate  | At what date was the interest last calculated up to                       |
+|:-----------------------:|:----------:|:-----------------------------------------------------------------------:|
+| amountAccrued           | BigDecimal | How much interest has been accumulated to date                          |
+| calculationDate         | LocalDate  | At what date was the interest last calculated up to                     |
 
 Sample input request:
 ```

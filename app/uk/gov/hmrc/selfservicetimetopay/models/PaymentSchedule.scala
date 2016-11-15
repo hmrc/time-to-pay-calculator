@@ -50,7 +50,7 @@ case class PaymentSchedule(startDate: LocalDate,
   }
 }
 
-case class Instalment(paymentDate: LocalDate, amount: BigDecimal) {
+case class Instalment(paymentDate: LocalDate, amount: BigDecimal, interest: BigDecimal) {
   override def toString: String =
-    s"""$paymentDate: $amount"""
+    s"""$paymentDate: $amount ($interest)"""
 }

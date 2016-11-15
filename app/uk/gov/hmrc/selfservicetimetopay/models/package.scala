@@ -45,6 +45,7 @@ package object models {
     (JsPath \ "initialPayment").read[BigDecimal](min(BigDecimal(0))) and
     (JsPath \ "startDate").read[LocalDate] and
     (JsPath \ "endDate").read[LocalDate] and
+    (JsPath \ "firstPaymentDate").read[Option[LocalDate]] and
     (JsPath \ "paymentFrequency").read[String]
   ) (Calculation.apply _)
 
