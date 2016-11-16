@@ -1,7 +1,7 @@
 
-# self-service-time-to-pay
+# time-to-pay-calculator
 
-[![Build Status](https://travis-ci.org/hmrc/self-service-time-to-pay.svg?branch=master)](https://travis-ci.org/hmrc/self-service-time-to-pay) [ ![Download](https://api.bintray.com/packages/hmrc/releases/self-service-time-to-pay/images/download.svg) ](https://bintray.com/hmrc/releases/self-service-time-to-pay/_latestVersion)
+[![Build Status](https://travis-ci.org/hmrc/time-to-pay-calculator.svg?branch=master)](https://travis-ci.org/hmrc/time-to-pay-calculator) [ ![Download](https://api.bintray.com/packages/hmrc/releases/time-to-pay-calculator/images/download.svg) ](https://bintray.com/hmrc/releases/time-to-pay-calculator/_latestVersion)
 
 ## Endpoint URLs
 
