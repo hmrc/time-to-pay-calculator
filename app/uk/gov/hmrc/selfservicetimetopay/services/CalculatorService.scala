@@ -24,11 +24,6 @@ import uk.gov.hmrc.selfservicetimetopay.models._
 import scala.math.BigDecimal.RoundingMode.{FLOOR, HALF_UP}
 
 class CalculatorService(interestService: InterestRateService, durationService: DurationService) {
-  val ONE_HUNDRED = 100
-  val MONTHS_IN_YEAR = 12
-  val PRECISION_2DP = 2
-  val PRECISION_10DP = 10
-
   val debitDueAndCalculationDatesWithinRate = (true, true)
   val debitDueDateWithinRate = (true, false)
   val calculationDateWithinRate = (false, true)
@@ -41,11 +36,11 @@ class CalculatorService(interestService: InterestRateService, durationService: D
     val principal = calculation.applyInitialPaymentToDebt(overalDebit.amount)
     val repayments = durationService.getRepaymentDates(calculation.getFirstPaymentDate, calculation.endDate)
     val numberOfPayments = BigDecimal(repayments.size)
-    val monthlyCapitalRepayment = (principal / numberOfPayments).setScale(PRECISION_2DP, HALF_UP)
+    val monthlyCapitalRepayment = (principal / numberOfPayments).setScale(2, HALF_UP)
 
     repayments.map { r =>
       val daysInterestToCharge = BigDecimal(durationService.getDaysBetween(calculation.startDate, r))
-      val interest = (monthlyCapitalRepayment * daysInterestToCharge * overalDebit.rate.map(_.dailyRate).getOrElse(BigDecimal(0)) / BigDecimal(100)).setScale(PRECISION_2DP, FLOOR)
+      val interest = (monthlyCapitalRepayment * daysInterestToCharge * overalDebit.rate.map(_.dailyRate).getOrElse(BigDecimal(0)) / BigDecimal(100)).setScale(2, FLOOR)
       val ins = Instalment(r, monthlyCapitalRepayment, interest)
       logger.info(s"Repayment $monthlyCapitalRepayment (${calculation.startDate} - $r) $daysInterestToCharge @ ${overalDebit.rate.map(_.rate).get.setScale(2, HALF_UP)} = $interest")
       ins
@@ -109,7 +104,7 @@ class CalculatorService(interestService: InterestRateService, durationService: D
       val numberOfDays = BigDecimal(durationService.getDaysBetween(startDate, endDate))
       val rate = l.rate.map(_.rate).getOrElse(BigDecimal(0))
       val fractionOfYear = numberOfDays / BigDecimal(l.dueDate.lengthOfYear())
-      val interestToPay = (l.amount * rate * fractionOfYear / 100).setScale(2, HALF_UP)
+      val interestToPay = (l.amount * rate * fractionOfYear / BigDecimal(100)).setScale(2, HALF_UP)
 
       logger.info(s"Debit: £${l.amount}\t$startDate\t-\t$endDate\t@\t$rate\tover\t$numberOfDays\tdays =\t£$interestToPay (simple)")
 

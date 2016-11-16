@@ -37,9 +37,11 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
     val table = Table(
       ("id", "debits",                                           "startDate",                    "endDate",                      "firstPaymentDate",            "initialPayment",           "repaymentCount", "amountToPay",  "totalInterest",  "regularAmount",  "finalAmount"),
 /*
-      ("A", Seq(new debit( 100.00, "2014-03-23", "2014-03-23"),
+      NB: These tests reflect IDMS based data which uses a different calculation mechanism to IRIS. They are commented out as a result but left intact here for reference should we need to test against IDMS logic
+
+      ("IDMS-A", Seq(new debit( 100.00, "2014-03-23", "2014-03-23"),
                 new debit( 300.00, "2014-07-10", "2014-07-10")),  LocalDate.parse("2016-08-30"),  LocalDate.parse("2017-11-09"), LocalDate.parse("2016-08-30"),    30.00,                     15,               430.68,           30.68,           30.00,            30.00),
-      ("B", Seq(Debit("POA1", 0.0, Interest(406.89, LocalDate.now), LocalDate.now),
+      ("IDMS-B", Seq(Debit("POA1", 0.0, Interest(406.89, LocalDate.now), LocalDate.now),
                 new debit(1722.10, "2013-01-31", "2013-01-31"),
                 new debit(  87.00, "2013-04-25", "2013-04-25"),
                 new debit(  87.00, "2013-09-20", "2013-09-20"),
@@ -48,13 +50,13 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
                 new debit( 375.80, "2013-07-01", "2013-07-01"),
                 new debit( 388.40, "2015-01-01", "2015-01-01"),
                 new debit( 607.40, "2016-01-01", "2016-01-01")),  LocalDate.parse("2016-09-02"),  LocalDate.parse("2027-07-02"), LocalDate.parse("2016-08-30"),   385.00,                     130,              4870.60,        1140.10,           35.00,            35.00),
-      ("C", Seq(new debit(1784.53, "2016-07-31", "2016-07-31")),  LocalDate.parse("2016-09-09"),  LocalDate.parse("2017-09-29"),  LocalDate.parse("2016-08-30"),  149.18,                      13,              1811.45,          26.92,          149.18,           149.18),
+      ("IDMS-C", Seq(new debit(1784.53, "2016-07-31", "2016-07-31")),  LocalDate.parse("2016-09-09"),  LocalDate.parse("2017-09-29"),  LocalDate.parse("2016-08-30"),  149.18,                      13,              1811.45,          26.92,          149.18,           149.18),
 */
-      ("CESA-1", Seq(new debit(5000.0, "2016-09-03", "2016-09-03")), LocalDate.parse("2016-09-03"), LocalDate.parse("2017-03-10"), LocalDate.parse("2016-09-10"),   1500.0,                     7,              5025.77,          25.77,          500.00,           525.77)
+      ("IRIS-1", Seq(new debit(5000.0, "2016-09-03", "2016-09-03")), LocalDate.parse("2016-09-03"), LocalDate.parse("2017-03-10"), LocalDate.parse("2016-09-10"),   1500.0,                     7,              5025.77,          25.77,          500.00,           525.77)
     )
 
     forAll(table) { (id, debits, startDate, endDate, firstPaymentDate, initialPayment, repaymentCount, amountToPay, totalInterest, regularAmount, finalAmount) =>
-      s"calculate interest for IDMS scenario $id" in {
+      s"calculate interest for scenario $id" in {
         val rates = "Tue:23 Aug 2016,2.75\nTue:29 Sep 2009,3.00"
         val rateData = Source.fromChars(rates.toCharArray)
 
