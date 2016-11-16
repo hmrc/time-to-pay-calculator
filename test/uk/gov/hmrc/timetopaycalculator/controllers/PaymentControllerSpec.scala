@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.selfservicetimetopay.controllers
+package uk.gov.hmrc.timetopaycalculator.controllers
 
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import play.api.libs.json.{JsError, Json}
 import play.api.test.FakeRequest
 import play.mvc.Http.Status._
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
-import uk.gov.hmrc.selfservicetimetopay.models.PaymentSchedule
+import uk.gov.hmrc.timetopaycalculator.models.PaymentSchedule
 
 class PaymentControllerSpec extends UnitSpec with WithFakeApplication {
 

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.selfservicetimetopay.controllers
+package uk.gov.hmrc.timetopaycalculator.controllers
 
 import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.play.microservice.controller.BaseController
-import uk.gov.hmrc.selfservicetimetopay.models._
-import uk.gov.hmrc.selfservicetimetopay.services.{CalculatorService, DurationService, InterestRateService}
+import uk.gov.hmrc.timetopaycalculator.models._
+import uk.gov.hmrc.timetopaycalculator.services.{CalculatorService, DurationService, InterestRateService}
 
 import scala.concurrent.Future
 

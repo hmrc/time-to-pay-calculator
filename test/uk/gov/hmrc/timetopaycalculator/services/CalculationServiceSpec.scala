@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.selfservicetimetopay.services
+package uk.gov.hmrc.timetopaycalculator.services
 
 import java.time.LocalDate
 
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import play.api.Logger
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
-import uk.gov.hmrc.selfservicetimetopay.models.{Calculation, Debit, Interest, PaymentSchedule}
+import uk.gov.hmrc.timetopaycalculator.models.{Calculation, Debit, Interest, PaymentSchedule}
 
 import scala.io.Source
 

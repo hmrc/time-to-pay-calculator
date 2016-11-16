@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.selfservicetimetopay.services
+package uk.gov.hmrc.timetopaycalculator.services
 
 import java.time.LocalDate
 
 import play.api.Logger._
-import uk.gov.hmrc.selfservicetimetopay.models._
+import uk.gov.hmrc.timetopaycalculator.models._
 
 import scala.math.BigDecimal.RoundingMode.{FLOOR, HALF_UP}
 

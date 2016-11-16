@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.selfservicetimetopay.services
+package uk.gov.hmrc.timetopaycalculator.services
 
 import java.io.FileNotFoundException
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 import play.api.Logger
-import uk.gov.hmrc.selfservicetimetopay.models.InterestRate
+import uk.gov.hmrc.timetopaycalculator.models.InterestRate
 
 import scala.io.Source
 

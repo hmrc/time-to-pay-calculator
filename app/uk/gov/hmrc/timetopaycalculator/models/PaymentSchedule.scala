@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.selfservicetimetopay.models
+package uk.gov.hmrc.timetopaycalculator.models
 
 import java.time.LocalDate
 

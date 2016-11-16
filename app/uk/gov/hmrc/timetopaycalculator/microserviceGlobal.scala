@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.selfservicetimetopay
+package uk.gov.hmrc.timetopaycalculator
 
 import com.typesafe.config.Config
 import play.api.{Application, Configuration, Play}
