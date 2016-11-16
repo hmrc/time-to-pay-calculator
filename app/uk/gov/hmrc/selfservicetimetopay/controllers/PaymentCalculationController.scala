@@ -20,7 +20,7 @@ import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.play.microservice.controller.BaseController
 import uk.gov.hmrc.selfservicetimetopay.models._
-import uk.gov.hmrc.selfservicetimetopay.services.CalculatorService
+import uk.gov.hmrc.selfservicetimetopay.services.{CalculatorService, DurationService, InterestRateService}
 
 import scala.concurrent.Future
 
@@ -36,5 +36,5 @@ trait PaymentCalculationController extends BaseController {
 }
 
 object PaymentCalculationController extends PaymentCalculationController {
-  override val calculatorService = CalculatorService
+  override val calculatorService = new CalculatorService(InterestRateService, DurationService)
 }

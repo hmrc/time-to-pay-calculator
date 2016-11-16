@@ -32,9 +32,10 @@ class PaymentControllerSpec extends UnitSpec with WithFakeApplication {
       ("""{ "initialPayment": 250.0, "startDate": "26-10-2015" }""", BAD_REQUEST),
       (
         """{ "initialPayment" : 0.0, "startDate" : "2016-09-01", "endDate" : "2016-11-30",
-             "paymentFrequency" : "MONTHLY", "liabilities": [{"type": "PAO1", "amount": 1000.00,
-              "interestAccrued" : 0.0,
-              "interestCalculationDate" : "2016-09-01", "dueDate" : "2016-09-01"}]}""", OK)
+             "paymentFrequency" : "MONTHLY",
+             "debits": [{"originCode": "PAO1", "amount": 1000.00,
+              "interest": {"amountAccrued" : 0.0, "calculationDate" : "2016-09-01"},
+              "dueDate" : "2016-09-01"}]}""", OK)
     )
 
     forAll(inputStatusData) { (input, statusCode) =>
@@ -47,46 +48,46 @@ class PaymentControllerSpec extends UnitSpec with WithFakeApplication {
     "vary the payment schedule according to the input" in {
       val input =
         """{ "initialPayment" : 0.0, "startDate" : "2016-09-01", "endDate" : "2016-11-30",
-             "paymentFrequency" : "MONTHLY", "liabilities": [{"type": "PAO1", "amount": 1000.00,
-              "interestAccrued" : 0.0,
-              "interestCalculationDate" : "2016-09-01", "dueDate" : "2016-09-01"}]}"""
+             "paymentFrequency" : "MONTHLY", "debits": [{"originCode": "PAO1", "amount": 1000.00,
+              "interest" : { "amountAccrued": 0.0, "calculationDate" : "2016-09-01"},
+              "dueDate" : "2016-09-01"}]}"""
 
       val response = PaymentCalculationController.generate()(FakeRequest("POST", "/paymentschedule").withBody(Json.parse(input)))
       val schedule = await(jsonBodyOf(response)).as[Seq[PaymentSchedule]]
 
-      schedule.head.totalPayable shouldBe 1000.42
+      schedule.head.totalPayable.doubleValue() shouldBe (1000.19 +- 0.1)
     }
 
     val unhappyData = Table(
       ("input", "fieldName", "errorMessage"),
       ("""{ "startDate" : "2016-09-01", "endDate" : "2016-11-30",
-             "paymentFrequency" : "MONTHLY", "liabilities": [{"type": "PAO1", "amount": 1000.00,
-              "interestAccrued" : 0.0,
-              "interestCalculationDate" : "2016-09-01", "dueDate" : "2016-09-01"}]}""" , "initialPayment" , "initialPayment must not be null"),
+             "paymentFrequency" : "MONTHLY", "debits": [{"originCode": "PAO1", "amount": 1000.00,
+             "interest": {"amountAccrued" : 0.0, "calculationDate" : "2016-09-01" },
+             "dueDate" : "2016-09-01"}]}""" , "initialPayment" , "initialPayment must not be null"),
       ("""{ "initialPayment" : 0.0, "endDate" : "2016-11-30",
-             "paymentFrequency" : "MONTHLY", "liabilities": [{"type": "PAO1", "amount": 1000.00,
-              "interestAccrued" : 0.0,
-              "interestCalculationDate" : "2016-09-01", "dueDate" : "2016-09-01"}]}""" , "startDate" , "startDate must not be null"),
+             "paymentFrequency" : "MONTHLY", "debits": [{"originCode": "PAO1", "amount": 1000.00,
+             "interest": {"amountAccrued" : 0.0, "calculationDate" : "2016-09-01" },
+             "dueDate" : "2016-09-01"}]}""" , "startDate" , "startDate must not be null"),
       ("""{ "initialPayment" : 0.0, "startDate" : "2016-09-01",
-             "paymentFrequency" : "MONTHLY", "liabilities": [{"type": "PAO1", "amount": 1000.00,
-              "interestAccrued" : 0.0,
-              "interestCalculationDate" : "2016-09-01", "dueDate" : "2016-09-01"}]}""" , "endDate" , "endDate must not be null"),
+             "paymentFrequency" : "MONTHLY", "debits": [{"originCode": "PAO1", "amount": 1000.00,
+             "interest": {"amountAccrued" : 0.0, "calculationDate" : "2016-09-01" },
+             "dueDate" : "2016-09-01"}]}""" , "endDate" , "endDate must not be null"),
       ("""{ "initialPayment" : 0.0, "startDate" : "2016-09-01", "endDate" : "2016-11-30",
-             "liabilities": [{"type": "PAO1", "amount": 1000.00,
-              "interestAccrued" : 0.0,
-              "interestCalculationDate" : "2016-09-01", "dueDate" : "2016-09-01"}]}""" , "paymentFrequency" , "paymentFrequency must not be null"),
+             "debits": [{"originCode": "PAO1", "amount": 1000.00,
+             "interest": {"amountAccrued" : 0.0, "calculationDate" : "2016-09-01" },
+             "dueDate" : "2016-09-01"}]}""" , "paymentFrequency" , "paymentFrequency must not be null"),
       ("""{ "initialPayment" : 0.0, "startDate" : "2016-09-01", "endDate" : "2016-11-30",
-             "paymentFrequency" : "MONTHLY"}""" , "liabilities" , "liabilities must not be null"),
+             "paymentFrequency" : "MONTHLY"}""" , "debits" , "debits must not be null"),
       ("""{ "initialPayment" : -10.0, "startDate" : "2016-09-01", "endDate" : "2016-11-30",
-             "paymentFrequency" : "MONTHLY", "liabilities": [{"type": "PAO1", "amount": 1000.00,
-              "interestAccrued" : 0.0,
-              "interestCalculationDate" : "2016-09-01", "dueDate" : "2016-09-01"}]}""" , "initialPayment" , "initialPayment must be a positive amount"),
+             "paymentFrequency" : "MONTHLY", "debits": [{"originCode": "PAO1", "amount": 1000.00,
+              "amountAccrued" : 0.0,
+              "calculationDate" : "2016-09-01", "dueDate" : "2016-09-01"}]}""" , "initialPayment" , "initialPayment must be a positive amount"),
       ("""{ "initialPayment" : 0.0, "startDate" : "2016-09-01", "endDate" : "2016-11-30",
-             "paymentFrequency" : "MONTHLY", "liabilities": []}""" , "liabilities" , "liabilities must contain at least one item"),
+             "paymentFrequency" : "MONTHLY", "debits": []}""" , "debits" , "debits must contain at least one item"),
       ("""{ "initialPayment" : 0.0, "startDate" : "2016-09-01", "endDate" : "2016-11-30",
-             "paymentFrequency" : "MONTHLY", "liabilities": [{"type": "PAO1",
-              "interestAccrued" : 0.0,
-              "interestCalculationDate" : "2016-09-01", "dueDate" : "2016-09-01"}]}""" , "liabilities[0].amount" , "liability amount must not be null"))
+             "paymentFrequency" : "MONTHLY", "debits": [{"originCode": "PAO1",
+              "amountAccrued" : 0.0,
+              "calculationDate" : "2016-09-01", "dueDate" : "2016-09-01"}]}""" , "debits[0].amount" , "liability amount must not be null"))
 
     forAll(unhappyData) { (input, fieldName, errorName) =>
       s"verify the unhappy path: input: $fieldName = $errorName" in {

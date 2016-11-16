@@ -18,7 +18,7 @@ All requests use the HTTP `POST` method
 Return a set of payment schedules for a bounded period (next 'event' date)
 
 * Given:
-    * A collection of `liability` items (type, amount, interest already accrued, interest calculated to date)
+    * A collection of `debit` items (type, amount, interest already accrued, interest calculated to date)
     * A `start date` for the arrangement (default to today)
     * An `end date` for the arrangement (default to start date + 11 months)
     * An `initial payment` amount affordable
@@ -32,39 +32,50 @@ Calculator input model:
 
 | Parameter                                            | Type            | Description                                                            |
 |:----------------------------------------------------:|:---------------:|:----------------------------------------------------------------------:|
-| liabilities                                          | List[Liability] | Collection of debts owed                                               |
+| debits                                               | List[Debit]     | Collection of debits owed                                              |
 | initialPayment                                       | BigDecimal      | How much they can pay now                                              |
 | startDate                                            | LocalDate       | The start date of the TTP arrangement                                  |
 | endDate                                              | LocalDate       | The end date of the TTP arrangement                                    |
+| firstPaymentDate                                     | LocalDate       | The date on which the first payment will be taken                      |
 | paymentFrequency            [DAILY\|WEEKLY\|MONTHLY] | String          | The frequency of the instalment payments                               |
 
 
-Liability input model:
+Debit input model:
 
 | Parameter               | Type       | Description                                                             |
-|-------------------------|------------|-------------------------------------------------------------------------|
-| type                    | String     | The type of the debt                                                    |
+|:-----------------------:|:----------:|:-----------------------------------------------------------------------:|
+| originCode              | String     | The originCode of the debt                                              |
 | amount                  | BigDecimal | The amount owed for that debt                                           |
-| interestAccrued         | BigDecimal | How much interest has been accumulated to date                          |
-| interestCalculationDate | LocalDate  | At what date was the interest last calculated up to                     |
+| interest                | Interest   | An interest object                                                      |
 | dueDate (optional)      | LocalDate  | The due date of the debt, used to calculate which debt to pay off first |
+
+Interest model:
+
+| Parameter               | Type       | Description                                                             |
+|:-----------------------:|:----------:|:-----------------------------------------------------------------------:|
+| amountAccrued           | BigDecimal | How much interest has been accumulated to date                          |
+| calculationDate         | LocalDate  | At what date was the interest last calculated up to                     |
 
 Sample input request:
 ```
 {
-  "liabilities" : [
+  "debits" : [
    {
-   	 "type": "POA2";
+   	 "originCode": "POA2";
    	 "amount": 250.52,
-   	 "interestAccrued": 42.32,
-   	 "interestCalculationDate": "2016-06-01",
+   	 "interest" : {
+   	    "amountAccrued": 42.32,
+       	"calculationDate": "2016-06-01"
+   	 },
    	 "dueDate": "2016-01-31"
    },
    {
-     "type": "POA1";
+     "originCode": "POA1";
    	 "amount": 134.07,
-   	 "interestAccrued": 10.50,
-   	 "interestCalculationDate": "2016-02-01",
+   	 "interest" : {
+   	    "amountAccrued": 10.50,
+       	"calculationDate": "2016-02-01"
+   	 },
    	 "dueDate": ""
    }
   ]
