@@ -18,12 +18,6 @@ package uk.gov.hmrc.timetopaycalculator.models
 
 import java.time.LocalDate
 
-case class Debit(originCode: String, amount: BigDecimal, interest: Interest, dueDate: LocalDate, endDate: Option[LocalDate] = None, rate: Option[InterestRate] = None)
+case class Debit(originCode: Option[String] = None, amount: BigDecimal, interest: Interest, dueDate: LocalDate, endDate: Option[LocalDate] = None, rate: Option[InterestRate] = None, taxYearEnd: Option[LocalDate] = None)
 
 case class Interest(amountAccrued: BigDecimal, calculationDate: LocalDate)
-
-object Debit {
-  def partialOf(l: Debit, startDate: LocalDate, endDate: LocalDate, rate: InterestRate): Debit = {
-    Debit(l.originCode, l.amount, l.interest, startDate, Some(endDate), Some(rate))
-  }
-}

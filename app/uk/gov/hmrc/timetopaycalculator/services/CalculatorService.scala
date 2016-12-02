@@ -24,9 +24,9 @@ import uk.gov.hmrc.timetopaycalculator.models._
 import scala.math.BigDecimal.RoundingMode.{FLOOR, HALF_UP}
 
 class CalculatorService(interestService: InterestRateService, durationService: DurationService) {
-  val debitDueAndCalculationDatesWithinRate = (true, true)
-  val debitDueDateWithinRate = (true, false)
-  val calculationDateWithinRate = (false, true)
+  object DebitDueAndCalculationDatesWithinRate extends Tuple2(true, true)
+  object DebitDueDateWithinRate extends Tuple2(true, false)
+  object CalculationDateWithinRate extends Tuple2(false, true)
 
   implicit def orderingLocalDate: Ordering[LocalDate] = Ordering.fromLessThan(_ isBefore _)
 
@@ -53,7 +53,6 @@ class CalculatorService(interestService: InterestRateService, durationService: D
     }.reduce(combine(differingAmounts))
 
     val instalments = calculateStagedPayments(overalDebit)
-
     val amountToPay = calculation.debits.map(_.amount).sum
     val totalInterest = overalDebit.interest.amountAccrued + instalments.map(_.interest).sum
 
@@ -65,14 +64,10 @@ class CalculatorService(interestService: InterestRateService, durationService: D
   private def processDebit(implicit calculation: Calculation): (Debit) => Debit = { debit =>
     interestService.getRatesForPeriod(debit.dueDate, calculation.endDate).map { rate =>
       (rate.containsDate(debit.dueDate), rate.containsDate(calculation.endDate)) match {
-        case `debitDueAndCalculationDatesWithinRate` =>
-          Debit.partialOf(debit, debit.dueDate, calculation.endDate, rate)
-        case `debitDueDateWithinRate` =>
-          Debit.partialOf(debit, debit.dueDate, rate.endDate.get, rate)
-        case `calculationDateWithinRate` =>
-          Debit.partialOf(debit, rate.startDate, calculation.endDate, rate)
-        case _ =>
-          Debit.partialOf(debit, rate.startDate, rate.endDate.get, rate)
+        case DebitDueAndCalculationDatesWithinRate => debit.copy(endDate = Option(calculation.endDate), rate = Option(rate))
+        case DebitDueDateWithinRate =>                debit.copy(endDate = rate.endDate, rate = Option(rate))
+        case CalculationDateWithinRate =>             debit.copy(dueDate = rate.startDate, endDate = Option(calculation.endDate), rate = Option(rate))
+        case _ =>                                     debit.copy(dueDate = rate.startDate, endDate = rate.endDate, rate = Option(rate))
       }
     }.reduce(combine(sameAmounts))
   }
@@ -91,7 +86,7 @@ class CalculatorService(interestService: InterestRateService, durationService: D
 
     val rate = ((rate1 * fractionOfYrAtRate1) + (rate2 * fractionOfYrAtRate2)) / (fractionOfYrAtRate1 + fractionOfYrAtRate2)
     val combinedRate = InterestRate(d1.dueDate, d2.endDate, rate)
-    Debit(d1.originCode, sumAmounts(d1, d2), Interest(d1.interest.amountAccrued + interest, calculation.startDate), d1.dueDate, d2.endDate, Some(combinedRate))
+    d1.copy(amount = sumAmounts(d1, d2), interest = Interest(d1.interest.amountAccrued + interest, calculation.startDate), endDate = d2.endDate, rate = Some(combinedRate))
   }
 
   private def flatInterest(implicit calculation: Calculation): (Debit) => BigDecimal = { l =>
