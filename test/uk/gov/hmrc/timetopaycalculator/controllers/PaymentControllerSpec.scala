@@ -17,7 +17,7 @@
 package uk.gov.hmrc.timetopaycalculator.controllers
 
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import play.api.libs.json.{JsError, Json}
+import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.mvc.Http.Status._
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
@@ -34,6 +34,18 @@ class PaymentControllerSpec extends UnitSpec with WithFakeApplication {
         """{ "initialPayment" : 0.0, "startDate" : "2016-09-01", "endDate" : "2016-11-30",
              "paymentFrequency" : "MONTHLY",
              "debits": [{"originCode": "PAO1", "amount": 1000.00,
+              "interest": {"amountAccrued" : 0.0, "calculationDate" : "2016-09-01"},
+              "dueDate" : "2016-09-01"}]}""", OK),
+      (
+        """{ "initialPayment" : 0.0, "startDate" : "2016-09-01", "endDate" : "2016-11-30",
+             "paymentFrequency" : "MONTHLY",
+             "debits": [{"amount": 1000.00,
+              "interest": {"amountAccrued" : 0.0, "calculationDate" : "2016-09-01"},
+              "dueDate" : "2016-09-01"}]}""", OK),
+      (
+        """{ "initialPayment" : 0.0, "startDate" : "2016-09-01", "endDate" : "2016-11-30",
+             "paymentFrequency" : "MONTHLY",
+             "debits": [{"originCode": "PAO1", "amount": 1000.00, "taxYearEnd": "2017-04-05",
               "interest": {"amountAccrued" : 0.0, "calculationDate" : "2016-09-01"},
               "dueDate" : "2016-09-01"}]}""", OK)
     )

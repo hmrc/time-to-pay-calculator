@@ -31,7 +31,7 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
 
   case class MockInterestRateService(override val source: Source) extends InterestRateService
 
-  class debit(amt: BigDecimal, calcTo: String, due: String) extends Debit("POA1", amt.setScale(2), Interest(BigDecimal(0), LocalDate.parse(calcTo)), LocalDate.parse(due))
+  class debit(amt: BigDecimal, calcTo: String, due: String) extends Debit(Some("POA1"), amt.setScale(2), Interest(BigDecimal(0), LocalDate.parse(calcTo)), LocalDate.parse(due))
 
   "The calculator service" should {
     val table = Table(
