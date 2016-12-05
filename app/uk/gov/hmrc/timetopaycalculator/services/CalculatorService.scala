@@ -54,7 +54,7 @@ class CalculatorService(interestService: InterestRateService, durationService: D
 
     val instalments = calculateStagedPayments(overalDebit)
     val amountToPay = calculation.debits.map(_.amount).sum
-    val totalInterest = overalDebit.interest.amountAccrued + instalments.map(_.interest).sum
+    val totalInterest = overalDebit.interest.getOrElse(Interest.none).amountAccrued + instalments.map(_.interest).sum
 
     PaymentSchedule(calculation.startDate, calculation.endDate, calculation.initialPayment, amountToPay,
       amountToPay - calculation.initialPayment, totalInterest, amountToPay + totalInterest,
@@ -86,11 +86,11 @@ class CalculatorService(interestService: InterestRateService, durationService: D
 
     val rate = ((rate1 * fractionOfYrAtRate1) + (rate2 * fractionOfYrAtRate2)) / (fractionOfYrAtRate1 + fractionOfYrAtRate2)
     val combinedRate = InterestRate(d1.dueDate, d2.endDate, rate)
-    d1.copy(amount = sumAmounts(d1, d2), interest = Interest(d1.interest.amountAccrued + interest, calculation.startDate), endDate = d2.endDate, rate = Some(combinedRate))
+    d1.copy(amount = sumAmounts(d1, d2), interest = Some(Interest(d1.interest.getOrElse(Interest.none).amountAccrued + interest, calculation.startDate)), endDate = d2.endDate, rate = Some(combinedRate))
   }
 
   private def flatInterest(implicit calculation: Calculation): (Debit) => BigDecimal = { l =>
-    val startDate = Seq(l.dueDate, l.interest.calculationDate).max
+    val startDate = Seq(l.dueDate, l.interest.getOrElse(Interest(BigDecimal(0), l.dueDate)).calculationDate).max
     val endDate = Seq(calculation.startDate.minusDays(1), l.endDate.getOrElse(calculation.startDate)).min
 
     if (startDate.isAfter(endDate)) {

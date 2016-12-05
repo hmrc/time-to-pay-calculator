@@ -18,6 +18,10 @@ package uk.gov.hmrc.timetopaycalculator.models
 
 import java.time.LocalDate
 
-case class Debit(originCode: Option[String] = None, amount: BigDecimal, interest: Interest, dueDate: LocalDate, endDate: Option[LocalDate] = None, rate: Option[InterestRate] = None, taxYearEnd: Option[LocalDate] = None)
+case class Debit(originCode: Option[String] = None, amount: BigDecimal, interest: Option[Interest], dueDate: LocalDate, endDate: Option[LocalDate] = None, rate: Option[InterestRate] = None, taxYearEnd: Option[LocalDate] = None)
 
 case class Interest(amountAccrued: BigDecimal, calculationDate: LocalDate)
+
+object Interest {
+  val none = Interest(0, LocalDate.now)
+}
