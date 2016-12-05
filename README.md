@@ -5,7 +5,7 @@
 
 ## Endpoint URLs
 
-POST `/paymentschedule`
+POST `/time-to-pay-calculator/paymentschedule`
 
 ## Service Definitions
 
