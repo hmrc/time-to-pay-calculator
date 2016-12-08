@@ -50,20 +50,17 @@ class InterestRateServiceSpec extends UnitSpec with WithFakeApplication {
       }
     }
 
-    "contain 234 entries with the default rate file" in {
-      InterestRateService.rates.size shouldBe 234
+    "contain 17 entries with the default rate file" in {
+      InterestRateService.rates.size shouldBe 17
     }
 
     val dateChecks = Table(
       ("date", "rate"),
-      (LocalDate.parse("2016-04-01"), 0.5),
-      (LocalDate.parse("2016-08-04"), 0.25),
-      (LocalDate.parse("2016-08-05"), 0.25),
-      (LocalDate.parse("2016-08-03"), 0.5),
-      (LocalDate.parse("1975-01-20"), 11.25),
-      (LocalDate.parse("1975-01-27"), 11),
-      (LocalDate.parse("1975-01-26"), 11.25),
-      (LocalDate.parse("2016-10-04"), 0.25),
+      (LocalDate.parse("2016-11-01"), 2.75),
+      (LocalDate.parse("2016-04-01"), 3.0),
+      (LocalDate.parse("2016-08-04"), 3.0),
+      (LocalDate.parse("2016-08-05"), 3.0),
+      (LocalDate.parse("2016-08-03"), 3.0),
       (LocalDate.parse("1975-01-01"), null)
     )
 
