@@ -32,7 +32,7 @@ object InterestRateService extends InterestRateService {
 
 trait InterestRateService {
   val source: Source
-  val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE:dd MMM yyyy")
+  val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
 
   lazy val rates: Seq[InterestRate] = streamInterestRates()
 

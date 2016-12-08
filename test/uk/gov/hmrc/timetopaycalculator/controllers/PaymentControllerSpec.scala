@@ -67,7 +67,7 @@ class PaymentControllerSpec extends UnitSpec with WithFakeApplication {
       val response = PaymentCalculationController.generate()(FakeRequest("POST", "/paymentschedule").withBody(Json.parse(input)))
       val schedule = await(jsonBodyOf(response)).as[Seq[PaymentSchedule]]
 
-      schedule.head.totalPayable.doubleValue() shouldBe (1000.19 +- 0.1)
+      schedule.head.totalPayable.doubleValue() shouldBe (1002.27 +- 0.1)
     }
 
     val unhappyData = Table(
