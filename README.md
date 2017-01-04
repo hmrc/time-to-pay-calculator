@@ -11,11 +11,11 @@ POST `/time-to-pay-calculator/paymentschedule`
 
 All requests use the HTTP `POST` method
 
-### Multiple Payment Schedule Calculator (external facing API - `/paymentschedule`)
+### Single Payment Schedule Calculator (external facing API - `/paymentschedule`)
 
 #### Functionality
 
-Return a set of payment schedules for a bounded period (next 'event' date)
+Return a payment schedule for a bounded period (next 'event' date)
 
 * Given:
     * A collection of `debit` items (type, amount, interest already accrued, interest calculated to date)
@@ -23,20 +23,19 @@ Return a set of payment schedules for a bounded period (next 'event' date)
     * An `end date` for the arrangement (default to start date + 11 months)
     * An `initial payment` amount affordable
 
-* For each "number of arrangements" (`months` = 2 .. `end date` months)
-    * Invoke the `Payment Schedule Calculator` (below) with an end date set to `months` in the future
-* Collate results in a PaymentSchedules element and return
+* Invoke the `Payment Schedule Calculator` (below) with an end date set to `months` in the future
+* Collate results in a PaymentSchedule element and return
 
 #### Input structure
 Calculator input model:
 
 | Parameter                                            | Type            | Description                                                            |
 |:----------------------------------------------------:|:---------------:|:----------------------------------------------------------------------:|
-| debits                                               | List[Debit]     | Collection of debits owed                                              |
+| debits                                               | Seq[Debit]     | Collection of debits owed                                              |
 | initialPayment                                       | BigDecimal      | How much they can pay now                                              |
 | startDate                                            | LocalDate       | The start date of the TTP arrangement                                  |
 | endDate                                              | LocalDate       | The end date of the TTP arrangement                                    |
-| firstPaymentDate                                     | LocalDate       | The date on which the first payment will be taken                      |
+| firstPaymentDate                                     | Option[LocalDate]       | The date on which the first payment will be taken                      |
 | paymentFrequency            [DAILY\|WEEKLY\|MONTHLY] | String          | The frequency of the instalment payments                               |
 
 
@@ -44,10 +43,10 @@ Debit input model:
 
 | Parameter               | Type       | Description                                                             |
 |:-----------------------:|:----------:|:-----------------------------------------------------------------------:|
-| originCode              | String     | The originCode of the debt                                              |
+| originCode              | Option[String]     | The originCode of the debt                                              |
 | amount                  | BigDecimal | The amount owed for that debt                                           |
-| interest                | Interest   | An interest object                                                      |
-| dueDate (optional)      | LocalDate  | The due date of the debt, used to calculate which debt to pay off first |
+| interest                | Option[Interest]   | An interest object                                                      |
+| dueDate     | LocalDate  | The due date of the debt, used to calculate which debt to pay off first |
 
 Interest model:
 
@@ -59,30 +58,23 @@ Interest model:
 Sample input request:
 ```
 {
-  "debits" : [
-   {
-   	 "originCode": "POA2";
-   	 "amount": 250.52,
-   	 "interest" : {
-   	    "amountAccrued": 42.32,
-       	"calculationDate": "2016-06-01"
-   	 },
-   	 "dueDate": "2016-01-31"
-   },
-   {
-     "originCode": "POA1";
-   	 "amount": 134.07,
-   	 "interest" : {
-   	    "amountAccrued": 10.50,
-       	"calculationDate": "2016-02-01"
-   	 },
-   	 "dueDate": ""
-   }
-  ]
-  "initialPayment": 50,
-  "startDate": "2016-09-01",
-  "endDate": "2017-08-01",
-  "paymentFrequency": "MONTHLY"
+   "debits":[
+      {
+         "originCode":"IN1",
+         "amount":5000,
+         "dueDate":"2017-01-25",
+         "interest":{
+            "calculationDate":"2017-01-25",
+            "amountAccrued":500
+         },
+         "taxYearEnd":"2017-04-05"
+      }
+   ],
+   "initialPayment":0,
+   "startDate":"2017-01-04",
+   "endDate":"2017-03-04",
+   "firstPaymentDate":"2017-01-04",
+   "paymentFrequency":"MONTHLY"
 }
 ```
 
@@ -91,12 +83,14 @@ Payment schedule output model:
 
 | Parameter                 | Type              | Description                                         |
 |:-------------------------:|:-----------------:|:---------------------------------------------------:|
+| startDate            | LocalDate        | Start date of the payment schedule                         |
+| endDate            | LocalDate        | End date of the payment schedule                          |
 | initialPayment            | BigDecimal        | How much they can pay now                           |
 | amountToPay               | BigDecimal        | Total debt owed                                     |
 | instalmentBalance         | BigDecimal        | The amount to pay over the instalments              |
 | totalInterestCharged      | BigDecimal        | How much interest has been applied                  |
 | totalPayable              | BigDecimal        | The amount to be paid from today including interest |
-| instalments               | List[Instalment]  | List of the instalment payment amounts and dates    |
+| instalments               | Seq[Instalment]  | List of the instalment payment amounts and dates    |
 
 Instalment (inner class) output model:
 
@@ -104,414 +98,34 @@ Instalment (inner class) output model:
 |:-----------------:|:-------------:|:-----------------------------------------:|
 | paymentDate    	| LocalDate  	| The date that the payment is due      	|
 | amount 	        | BigDecimal 	| The amount to pay for that instalment 	|
+| interest 	        | BigDecimal 	| The amount of interest for that instalment 	|
 
 Sample successful output response:
 ````
 [
   {
-    "initialPayment": 50,
+    "startDate": "2017-01-04",
+    "endDate": "2017-03-04",
+    "initialPayment": 0,
     "amountToPay": 5000,
-    "instalmentBalance": 4950,
-    "totalInterestCharged": 22.91,
-    "totalPayable": 5022.91,
+    "instalmentBalance": 5000,
+    "totalInterestCharged": 511.29,
+    "totalPayable": 5511.29,
     "instalments": [
       {
-        "paymentDate": "2016-10-01",
-        "amount": 2486.45
+        "paymentDate": "2017-01-04",
+        "amount": 1666.67,
+        "interest": 0
       },
       {
-        "paymentDate": "2016-11-01",
-        "amount": 2486.45
-      }
-    ]
-  },
-  {
-    "initialPayment": 50,
-    "amountToPay": 5000,
-    "instalmentBalance": 4950,
-    "totalInterestCharged": 34.18,
-    "totalPayable": 5034.18,
-    "instalments": [
-      {
-        "paymentDate": "2016-10-01",
-        "amount": 1661.39
-      },
-      {
-        "paymentDate": "2016-11-01",
-        "amount": 1661.39
-      },
-      {
-        "paymentDate": "2016-12-01",
-        "amount": 1661.39
-      }
-    ]
-  },
-  {
-    "initialPayment": 50,
-    "amountToPay": 5000,
-    "instalmentBalance": 4950,
-    "totalInterestCharged": 45.83,
-    "totalPayable": 5045.83,
-    "instalments": [
-      {
-        "paymentDate": "2016-10-01",
-        "amount": 1248.95
-      },
-      {
-        "paymentDate": "2016-11-01",
-        "amount": 1248.95
-      },
-      {
-        "paymentDate": "2016-12-01",
-        "amount": 1248.95
-      },
-      {
-        "paymentDate": "2017-01-01",
-        "amount": 1248.95
-      }
-    ]
-  },
-  {
-    "initialPayment": 50,
-    "amountToPay": 5000,
-    "instalmentBalance": 4950,
-    "totalInterestCharged": 57.5,
-    "totalPayable": 5057.5,
-    "instalments": [
-      {
-        "paymentDate": "2016-10-01",
-        "amount": 1001.5
-      },
-      {
-        "paymentDate": "2016-11-01",
-        "amount": 1001.5
-      },
-      {
-        "paymentDate": "2016-12-01",
-        "amount": 1001.5
-      },
-      {
-        "paymentDate": "2017-01-01",
-        "amount": 1001.5
-      },
-      {
-        "paymentDate": "2017-02-01",
-        "amount": 1001.5
-      }
-    ]
-  },
-  {
-    "initialPayment": 50,
-    "amountToPay": 5000,
-    "instalmentBalance": 4950,
-    "totalInterestCharged": 68.05,
-    "totalPayable": 5068.05,
-    "instalments": [
-      {
-        "paymentDate": "2016-10-01",
-        "amount": 836.34
-      },
-      {
-        "paymentDate": "2016-11-01",
-        "amount": 836.34
-      },
-      {
-        "paymentDate": "2016-12-01",
-        "amount": 836.34
-      },
-      {
-        "paymentDate": "2017-01-01",
-        "amount": 836.34
-      },
-      {
-        "paymentDate": "2017-02-01",
-        "amount": 836.34
-      },
-      {
-        "paymentDate": "2017-03-01",
-        "amount": 836.34
-      }
-    ]
-  },
-  {
-    "initialPayment": 50,
-    "amountToPay": 5000,
-    "instalmentBalance": 4950,
-    "totalInterestCharged": 79.73,
-    "totalPayable": 5079.73,
-    "instalments": [
-      {
-        "paymentDate": "2016-10-01",
-        "amount": 718.53
-      },
-      {
-        "paymentDate": "2016-11-01",
-        "amount": 718.53
-      },
-      {
-        "paymentDate": "2016-12-01",
-        "amount": 718.53
-      },
-      {
-        "paymentDate": "2017-01-01",
-        "amount": 718.53
-      },
-      {
-        "paymentDate": "2017-02-01",
-        "amount": 718.53
-      },
-      {
-        "paymentDate": "2017-03-01",
-        "amount": 718.53
-      },
-      {
-        "paymentDate": "2017-04-01",
-        "amount": 718.53
-      }
-    ]
-  },
-  {
-    "initialPayment": 50,
-    "amountToPay": 5000,
-    "instalmentBalance": 4950,
-    "totalInterestCharged": 91.03,
-    "totalPayable": 5091.03,
-    "instalments": [
-      {
-        "paymentDate": "2016-10-01",
-        "amount": 630.12
-      },
-      {
-        "paymentDate": "2016-11-01",
-        "amount": 630.12
-      },
-      {
-        "paymentDate": "2016-12-01",
-        "amount": 630.12
-      },
-      {
-        "paymentDate": "2017-01-01",
-        "amount": 630.12
-      },
-      {
-        "paymentDate": "2017-02-01",
-        "amount": 630.12
-      },
-      {
-        "paymentDate": "2017-03-01",
-        "amount": 630.12
-      },
-      {
-        "paymentDate": "2017-04-01",
-        "amount": 630.12
-      },
-      {
-        "paymentDate": "2017-05-01",
-        "amount": 630.12
-      }
-    ]
-  },
-  {
-    "initialPayment": 50,
-    "amountToPay": 5000,
-    "instalmentBalance": 4950,
-    "totalInterestCharged": 102.71,
-    "totalPayable": 5102.71,
-    "instalments": [
-      {
-        "paymentDate": "2016-10-01",
-        "amount": 561.41
-      },
-      {
-        "paymentDate": "2016-11-01",
-        "amount": 561.41
-      },
-      {
-        "paymentDate": "2016-12-01",
-        "amount": 561.41
-      },
-      {
-        "paymentDate": "2017-01-01",
-        "amount": 561.41
-      },
-      {
-        "paymentDate": "2017-02-01",
-        "amount": 561.41
-      },
-      {
-        "paymentDate": "2017-03-01",
-        "amount": 561.41
-      },
-      {
-        "paymentDate": "2017-04-01",
-        "amount": 561.41
-      },
-      {
-        "paymentDate": "2017-05-01",
-        "amount": 561.41
-      },
-      {
-        "paymentDate": "2017-06-01",
-        "amount": 561.41
-      }
-    ]
-  },
-  {
-    "initialPayment": 50,
-    "amountToPay": 5000,
-    "instalmentBalance": 4950,
-    "totalInterestCharged": 114.01,
-    "totalPayable": 5114.01,
-    "instalments": [
-      {
-        "paymentDate": "2016-10-01",
-        "amount": 506.4
-      },
-      {
-        "paymentDate": "2016-11-01",
-        "amount": 506.4
-      },
-      {
-        "paymentDate": "2016-12-01",
-        "amount": 506.4
-      },
-      {
-        "paymentDate": "2017-01-01",
-        "amount": 506.4
-      },
-      {
-        "paymentDate": "2017-02-01",
-        "amount": 506.4
-      },
-      {
-        "paymentDate": "2017-03-01",
-        "amount": 506.4
-      },
-      {
-        "paymentDate": "2017-04-01",
-        "amount": 506.4
-      },
-      {
-        "paymentDate": "2017-05-01",
-        "amount": 506.4
-      },
-      {
-        "paymentDate": "2017-06-01",
-        "amount": 506.4
-      },
-      {
-        "paymentDate": "2017-07-01",
-        "amount": 506.4
-      }
-    ]
-  },
-  {
-    "initialPayment": 50,
-    "amountToPay": 5000,
-    "instalmentBalance": 4950,
-    "totalInterestCharged": 125.69,
-    "totalPayable": 5125.69,
-    "instalments": [
-      {
-        "paymentDate": "2016-10-01",
-        "amount": 461.42
-      },
-      {
-        "paymentDate": "2016-11-01",
-        "amount": 461.42
-      },
-      {
-        "paymentDate": "2016-12-01",
-        "amount": 461.42
-      },
-      {
-        "paymentDate": "2017-01-01",
-        "amount": 461.42
-      },
-      {
-        "paymentDate": "2017-02-01",
-        "amount": 461.42
-      },
-      {
-        "paymentDate": "2017-03-01",
-        "amount": 461.42
-      },
-      {
-        "paymentDate": "2017-04-01",
-        "amount": 461.42
-      },
-      {
-        "paymentDate": "2017-05-01",
-        "amount": 461.42
-      },
-      {
-        "paymentDate": "2017-06-01",
-        "amount": 461.42
-      },
-      {
-        "paymentDate": "2017-07-01",
-        "amount": 461.42
-      },
-      {
-        "paymentDate": "2017-08-01",
-        "amount": 461.42
-      }
-    ]
-  },
-  {
-    "initialPayment": 50,
-    "amountToPay": 5000,
-    "instalmentBalance": 4950,
-    "totalInterestCharged": 137.37,
-    "totalPayable": 5137.37,
-    "instalments": [
-      {
-        "paymentDate": "2016-10-01",
-        "amount": 423.94
-      },
-      {
-        "paymentDate": "2016-11-01",
-        "amount": 423.94
-      },
-      {
-        "paymentDate": "2016-12-01",
-        "amount": 423.94
-      },
-      {
-        "paymentDate": "2017-01-01",
-        "amount": 423.94
-      },
-      {
-        "paymentDate": "2017-02-01",
-        "amount": 423.94
-      },
-      {
-        "paymentDate": "2017-03-01",
-        "amount": 423.94
-      },
-      {
-        "paymentDate": "2017-04-01",
-        "amount": 423.94
-      },
-      {
-        "paymentDate": "2017-05-01",
-        "amount": 423.94
-      },
-      {
-        "paymentDate": "2017-06-01",
-        "amount": 423.94
-      },
-      {
-        "paymentDate": "2017-07-01",
-        "amount": 423.94
-      },
-      {
-        "paymentDate": "2017-08-01",
-        "amount": 423.94
+        "paymentDate": "2017-02-04",
+        "amount": 1666.67,
+        "interest": 3.89
       },
       {
-        "paymentDate": "2017-09-01",
-        "amount": 423.94
+        "paymentDate": "2017-03-04",
+        "amount": 2177.96,
+        "interest": 7.4
       }
     ]
   }

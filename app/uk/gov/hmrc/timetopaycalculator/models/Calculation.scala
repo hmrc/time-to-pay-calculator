@@ -18,7 +18,12 @@ package uk.gov.hmrc.timetopaycalculator.models
 
 import java.time.LocalDate
 
-case class Calculation(debits: Seq[Debit], initialPayment: BigDecimal, startDate: LocalDate, endDate: LocalDate, firstPaymentDate: Option[LocalDate] = None, paymentFrequency: String) {
+case class Calculation(debits: Seq[Debit],
+                       initialPayment: BigDecimal,
+                       startDate: LocalDate,
+                       endDate: LocalDate,
+                       firstPaymentDate: Option[LocalDate] = None,
+                       paymentFrequency: String) {
 
   var initialPaymentRemaining: BigDecimal = initialPayment
 
