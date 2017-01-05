@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ class CalculatorService(interestService: InterestRateService, durationService: D
 
     val instalments = calculateStagedPayments(overalDebit)
     val amountToPay = calculation.debits.map(_.amount).sum
-    val totalInterest = overalDebit.interest.getOrElse(Interest.none).amountAccrued + instalments.map(_.interest).sum
+    val totalInterest = calculation.debits.map(_.interest.getOrElse(Interest.none).amountAccrued).sum + instalments.map(_.interest).sum
 
     PaymentSchedule(calculation.startDate, calculation.endDate, calculation.initialPayment, amountToPay,
       amountToPay - calculation.initialPayment, totalInterest, amountToPay + totalInterest,
