@@ -54,7 +54,9 @@ class CalculatorService(interestService: InterestRateService, durationService: D
 
     val instalments = calculateStagedPayments(overalDebit)
     val amountToPay = calculation.debits.map(_.amount).sum
-    val totalInterest = calculation.debits.map(_.interest.getOrElse(Interest.none).amountAccrued).sum + instalments.map(_.interest).sum
+    val totalInterest = (overalDebit.interest.getOrElse(Interest.none).amountAccrued
+    + instalments.map(_.interest).sum
+    + calculation.debits.map(_.interest.getOrElse(Interest.none).amountAccrued).sum)
 
     PaymentSchedule(calculation.startDate, calculation.endDate, calculation.initialPayment, amountToPay,
       amountToPay - calculation.initialPayment, totalInterest, amountToPay + totalInterest,
@@ -77,7 +79,7 @@ class CalculatorService(interestService: InterestRateService, durationService: D
   private def sameAmounts = (d1: Debit, d2: Debit) => d1.amount
 
   private def combine(sumAmounts: (Debit, Debit) => BigDecimal)(implicit calculation: Calculation) = { (d1: Debit, d2: Debit) =>
-    val interest = flatInterest.apply(d2)
+    val interest = flatInterest.apply(d1) + flatInterest.apply(d2)
     val rate1 = d1.rate.map(_.rate).getOrElse(BigDecimal(0))
     val rate2 = d2.rate.map(_.rate).getOrElse(BigDecimal(0))
 
