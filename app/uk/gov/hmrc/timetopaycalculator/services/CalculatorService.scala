@@ -48,15 +48,13 @@ class CalculatorService(interestService: InterestRateService, durationService: D
   }
 
   def buildSchedule(implicit calculation: Calculation): PaymentSchedule = {
-    val overalDebit = calculation.debits.map {
+    val overallDebit = calculation.debits.map {
       processDebit
     }.reduce(combine(differingAmounts))
 
-    val instalments = calculateStagedPayments(overalDebit)
+    val instalments = calculateStagedPayments(overallDebit)
     val amountToPay = calculation.debits.map(_.amount).sum
-    val totalInterest = (overalDebit.interest.getOrElse(Interest.none).amountAccrued
-    + instalments.map(_.interest).sum
-    + calculation.debits.map(_.interest.getOrElse(Interest.none).amountAccrued).sum)
+    val totalInterest = overallDebit.interest.getOrElse(Interest.none).amountAccrued + instalments.map(_.interest).sum
 
     PaymentSchedule(calculation.startDate, calculation.endDate, calculation.initialPayment, amountToPay,
       amountToPay - calculation.initialPayment, totalInterest, amountToPay + totalInterest,
