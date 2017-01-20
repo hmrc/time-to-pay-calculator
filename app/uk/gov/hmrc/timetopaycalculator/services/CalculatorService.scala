@@ -93,7 +93,7 @@ class CalculatorService(interestService: InterestRateService, durationService: D
 
   private def flatInterest(implicit calculation: Calculation): (Debit) => BigDecimal = { l =>
     val startDate = Seq(l.dueDate, l.interest.getOrElse(Interest(BigDecimal(0), l.dueDate)).calculationDate).max
-    val endDate = Seq(calculation.startDate, l.endDate.getOrElse(calculation.startDate)).min
+    val endDate = Seq(calculation.startDate.minusDays(1), l.endDate.getOrElse(calculation.startDate)).min
 
     if (startDate.isAfter(endDate)) {
       BigDecimal(0)
