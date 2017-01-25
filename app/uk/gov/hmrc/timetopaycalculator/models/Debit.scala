@@ -19,8 +19,6 @@ package uk.gov.hmrc.timetopaycalculator.models
 import java.time.LocalDate
 import java.time.Year
 
-import scala.math.BigDecimal.RoundingMode.FLOOR
-
 case class Debit(originCode: Option[String] = None,
                  amount: BigDecimal,
                  interest: Option[Interest],

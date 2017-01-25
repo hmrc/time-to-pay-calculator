@@ -31,7 +31,8 @@ class CalculatorService(interestService: InterestRateService, durationService: D
 
   implicit def orderingLocalDate: Ordering[LocalDate] = Ordering.fromLessThan(_ isBefore _)
 
-  def generateMultipleSchedules(implicit calculation: Calculation) = Seq(buildSchedule).map { s => logger.info(s"Payment Schedule: $s"); s }
+  def generateMultipleSchedules(implicit calculation: Calculation):Seq[PaymentSchedule] =
+    Seq(buildSchedule).map { s => logger.info(s"Payment Schedule: $s"); s }
 
   def calculateStagedPayments(overallDebits: Seq[Debit])(implicit calculation: Calculation): Seq[Instalment] = {
     val repayments = durationService.getRepaymentDates(calculation.getFirstPaymentDate, calculation.endDate)
@@ -42,8 +43,8 @@ class CalculatorService(interestService: InterestRateService, durationService: D
       val principal = calculation.applyInitialPaymentToDebt(debit.amount)
       val monthlyCapitalRepayment = (principal / numberOfPayments).setScale(2, HALF_UP)
       val calculationDate = if (calculation.startDate.isBefore(debit.dueDate)) debit.dueDate else calculation.startDate
-
-      val currentDailyRate = InterestRateService.rateOn(calculationDate).getOrElse(InterestRate.NONE).rate / BigDecimal(Year.of(calculationDate.getYear).length()) / BigDecimal(100)
+      val currentInterestRate = InterestRateService.rateOn(calculationDate).getOrElse(InterestRate.NONE).rate
+      val currentDailyRate = currentInterestRate / BigDecimal(Year.of(calculationDate.getYear).length()) / BigDecimal(100)
 
       repayments.map { r =>
         val daysInterestToCharge = BigDecimal(durationService.getDaysBetween(calculationDate, r))
@@ -51,7 +52,7 @@ class CalculatorService(interestService: InterestRateService, durationService: D
         val interest = monthlyCapitalRepayment  * currentDailyRate * daysInterestToCharge
 
         val ins = Instalment(r, monthlyCapitalRepayment, interest)
-        //logger.info(s"Repayment $monthlyCapitalRepayment ($calculationDate - $r) $daysInterestToCharge @ ${overallDebit.rate.map(_.rate).get.setScale(2, HALF_UP)} = $interest")
+        logger.info(s"Repayment $monthlyCapitalRepayment ($calculationDate - $r) $daysInterestToCharge @ $currentDailyRate = $interest")
         ins
       }
     }
