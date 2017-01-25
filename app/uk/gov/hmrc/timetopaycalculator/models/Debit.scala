@@ -17,6 +17,9 @@
 package uk.gov.hmrc.timetopaycalculator.models
 
 import java.time.LocalDate
+import java.time.Year
+
+import scala.math.BigDecimal.RoundingMode.FLOOR
 
 case class Debit(originCode: Option[String] = None,
                  amount: BigDecimal,
@@ -24,7 +27,10 @@ case class Debit(originCode: Option[String] = None,
                  dueDate: LocalDate,
                  endDate: Option[LocalDate] = None,
                  rate: Option[InterestRate] = None,
-                 taxYearEnd: Option[LocalDate] = None)
+                 taxYearEnd: Option[LocalDate] = None) {
+
+  def historicDailyRate: BigDecimal = rate.map(_.rate).getOrElse(BigDecimal(0)) / BigDecimal(Year.of(dueDate.getYear).length()) / BigDecimal(100)
+}
 
 case class Interest(amountAccrued: BigDecimal, calculationDate: LocalDate)
 
