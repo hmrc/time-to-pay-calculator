@@ -21,7 +21,7 @@ import java.time.temporal.ChronoUnit
 import java.time.temporal.ChronoUnit._
 
 trait DurationService {
-  def getDaysBetween(startDate: LocalDate, endDate: LocalDate): Long = calculatePeriod(startDate, endDate, DAYS, inclusive = false)
+  def getDaysBetween(startDate: LocalDate, endDate: LocalDate, inclusive: Boolean = true): Long = calculatePeriod(startDate, endDate, DAYS, inclusive)
 
   def getRepaymentDates(startDate: LocalDate, endDate: LocalDate): Seq[LocalDate] = {
     if(startDate.isAfter(endDate)) {

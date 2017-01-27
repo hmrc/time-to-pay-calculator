@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.timetopaycalculator.services
 
-import java.time.LocalDate
-import java.time.Year
+import java.time.{LocalDate, Year}
 
 import play.api.Logger._
 import uk.gov.hmrc.timetopaycalculator.models._
 
-import scala.math.BigDecimal.RoundingMode.{FLOOR, HALF_UP}
+import scala.math.BigDecimal.RoundingMode.HALF_UP
 
 class CalculatorService(interestService: InterestRateService, durationService: DurationService) {
   object DebitDueAndCalculationDatesWithinRate extends Tuple2(true, true)
@@ -39,7 +38,6 @@ class CalculatorService(interestService: InterestRateService, durationService: D
     val numberOfPayments = BigDecimal(repayments.size)
 
     val instalments = calculation.debits.flatMap { debit =>
-
       val principal = calculation.applyInitialPaymentToDebt(debit.amount)
       val monthlyCapitalRepayment = (principal / numberOfPayments).setScale(2, HALF_UP)
       val calculationDate = if (calculation.startDate.isBefore(debit.dueDate)) debit.dueDate else calculation.startDate
@@ -75,7 +73,7 @@ class CalculatorService(interestService: InterestRateService, durationService: D
 
     val amountToPay = calculation.debits.map(_.amount).sum
 
-    val totalInterest =  instalments.map(_.interest).sum + totalHistocInterest
+    val totalInterest =  (instalments.map(_.interest).sum + totalHistocInterest).setScale(2, HALF_UP)
 
     PaymentSchedule(calculation.startDate, calculation.endDate, calculation.initialPayment, amountToPay,
       amountToPay - calculation.initialPayment, totalInterest, amountToPay + totalInterest,
@@ -93,26 +91,22 @@ class CalculatorService(interestService: InterestRateService, durationService: D
     }
   }
 
-  private def calculateHistoricInterest(debit: Debit): BigDecimal = {
-    // call duration service to work out the number of days
-    debit.historicDailyRate*debit.amount*189 // TODO replace 189 with num days
-  }
+  def historicRateDaysInclusive(debitEndDate: LocalDate)(implicit calculation: Calculation): Boolean =
+    if(debitEndDate.getYear.equals(calculation.startDate.getYear)) false else true
 
-  private def flatInterest(implicit calculation: Calculation): (Debit) => BigDecimal = { l =>
-    val startDate = Seq(l.dueDate, l.interest.getOrElse(Interest(BigDecimal(0), l.dueDate)).calculationDate).max
-    val endDate = Seq(calculation.startDate.minusDays(1), l.endDate.getOrElse(calculation.startDate)).min
+  def historicRateEndDate(debitEndDate: LocalDate)(implicit calculation: Calculation): LocalDate =
+    if(debitEndDate.getYear.equals(calculation.startDate.getYear)) calculation.startDate else debitEndDate
 
-    if (startDate.isAfter(endDate)) {
-      BigDecimal(0)
-    } else {
-      val numberOfDays = BigDecimal(durationService.getDaysBetween(startDate, endDate))
-      val rate = l.rate.map(_.rate).getOrElse(BigDecimal(0))
-      val fractionOfYear = numberOfDays / BigDecimal(l.dueDate.lengthOfYear())
-      val interestToPay = (l.amount * rate * fractionOfYear / BigDecimal(100)).setScale(2, HALF_UP)
+  private def calculateHistoricInterest(debit: Debit)(implicit calculation: Calculation): BigDecimal = {
+    val debitEndDate = debit.rate.getOrElse(InterestRate.NONE).endDate.get
+    val inclusive = historicRateDaysInclusive(debitEndDate) // true except the extra case of current year
+    val endDate = historicRateEndDate(debitEndDate)
 
-      logger.info(s"Debit: £${l.amount}\t$startDate\t-\t$endDate\t@\t$rate\tover\t$numberOfDays\tdays =\t£$interestToPay (simple)")
+    val numberOfDays = durationService.getDaysBetween(debit.dueDate, endDate, inclusive)
+    val historicRate = debit.historicDailyRate
+    val total = historicRate*debit.amount*numberOfDays
 
-      interestToPay
-    }
+    logger.info(s"Historic interest: rate $historicRate days $numberOfDays  amount ${debit.amount} total = $total")
+    total
   }
 }
