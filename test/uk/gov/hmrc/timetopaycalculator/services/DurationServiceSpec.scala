@@ -54,10 +54,10 @@ class DurationServiceSpec extends UnitSpec with WithFakeApplication {
 
     val daysBetweenData = Table(
       ("startDate", "endDate", "count"),
-      (LocalDate.parse("2016-01-01"), LocalDate.parse("2016-01-02"), 1),
-      (LocalDate.parse("2016-01-01"), LocalDate.parse("2016-01-03"), 2),
-      (LocalDate.parse("2016-01-01"), LocalDate.parse("2016-01-04"), 3),
-      (LocalDate.parse("2015-01-01"), LocalDate.parse("2017-01-01"), 365 + 366),
+      (LocalDate.parse("2016-01-01"), LocalDate.parse("2016-01-02"), 2),
+      (LocalDate.parse("2016-01-01"), LocalDate.parse("2016-01-03"), 3),
+      (LocalDate.parse("2016-01-01"), LocalDate.parse("2016-01-04"), 4),
+      (LocalDate.parse("2015-01-01"), LocalDate.parse("2017-01-01"), 365 + 366 + 1),
       (LocalDate.parse("2017-01-01"), LocalDate.parse("2016-01-03"), 0)
     )
 
