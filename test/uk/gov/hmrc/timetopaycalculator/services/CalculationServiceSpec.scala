@@ -103,6 +103,7 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
       (Seq(new debit(500.0, "2016-09-01", "2016-09-01"),
         new debit(500.0, "2016-09-01", "2016-09-01"),
         new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1500.0, 500.0, 1.18, 1501.18)
+
     )
     
     forAll(realWorldData) { (debits, startDate, endDate, initialPayment, amountToPay, instalmentBalance, totalInterest, totalPayable) =>

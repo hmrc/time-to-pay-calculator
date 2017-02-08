@@ -66,7 +66,7 @@ class CalculatorService(interestService: InterestRateService, durationService: D
     }
 
     val totalHistocInterest = (for {
-      debit <- overallDebits
+      debit <- overallDebits.filterNot(_.dueDate.isAfter(calculation.startDate))
     } yield calculateHistoricInterest(debit)).sum
 
     val instalments = calculateStagedPayments(overallDebits)
