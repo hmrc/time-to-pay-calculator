@@ -19,6 +19,7 @@ package uk.gov.hmrc.timetopaycalculator.services
 import java.time.{LocalDate, Year}
 
 import play.api.Logger._
+import play.api.Play.{configuration, current}
 import uk.gov.hmrc.timetopaycalculator.models._
 
 import scala.math.BigDecimal.RoundingMode.HALF_UP
@@ -65,8 +66,10 @@ class CalculatorService(interestService: InterestRateService, durationService: D
     val currentDailyRate = currentInterestRate / BigDecimal(Year.of(calculation.startDate.getYear).length()) / BigDecimal(100)
     debits.map {
       debit =>
-        val daysOfInterest = if(debit.dueDate.isBefore(calculation.startDate)) 7
-        else durationService.getDaysBetween(debit.dueDate, calculation.startDate.plusWeeks(1))
+        val daysOfInterest = if(debit.dueDate.isBefore(calculation.startDate))
+          configuration.getInt("defaultInitialPaymentDays").getOrElse(7)
+        else
+          durationService.getDaysBetween(debit.dueDate, calculation.startDate.plusWeeks(1))
 
         val interest = daysOfInterest * currentDailyRate * debit.amount
         logger.info(s"Initial payment interest of $interest at $daysOfInterest days at rate $currentDailyRate")
