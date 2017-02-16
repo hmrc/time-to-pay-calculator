@@ -69,7 +69,7 @@ class CalculatorService(interestService: InterestRateService, durationService: D
         else durationService.getDaysBetween(debit.dueDate, calculation.startDate.plusWeeks(1))
 
         val interest = daysOfInterest * currentDailyRate * debit.amount
-        logger.info(s"Initial payment interest of $interest at $daysOfInterest days at rate ${currentDailyRate}")
+        logger.info(s"Initial payment interest of $interest at $daysOfInterest days at rate $currentDailyRate")
         interest
     }.sum
   }
