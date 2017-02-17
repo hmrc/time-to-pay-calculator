@@ -19,6 +19,7 @@ package uk.gov.hmrc.timetopaycalculator.services
 import java.time.{LocalDate, Year}
 
 import play.api.Logger._
+import play.api.Play.{configuration, current}
 import uk.gov.hmrc.timetopaycalculator.models._
 
 import scala.math.BigDecimal.RoundingMode.HALF_UP
@@ -60,20 +61,40 @@ class CalculatorService(interestService: InterestRateService, durationService: D
     }
   }
 
+  def calculateInitialPaymentInterest(debits: Seq[Debit])(implicit calculation: Calculation): BigDecimal = {
+    val currentInterestRate = InterestRateService.rateOn(calculation.startDate).getOrElse(InterestRate.NONE).rate
+    val currentDailyRate = currentInterestRate / BigDecimal(Year.of(calculation.startDate.getYear).length()) / BigDecimal(100)
+    debits.map {
+      debit =>
+        val daysOfInterest = if(debit.dueDate.isBefore(calculation.startDate))
+          configuration.getInt("defaultInitialPaymentDays").getOrElse(7)
+        else
+          durationService.getDaysBetween(debit.dueDate, calculation.startDate.plusWeeks(1))
+
+        val interest = daysOfInterest * currentDailyRate * debit.amount
+        logger.info(s"Initial payment interest of $interest at $daysOfInterest days at rate $currentDailyRate")
+        interest
+    }.sum
+  }
+
   def buildSchedule(implicit calculation: Calculation): PaymentSchedule = {
     val overallDebits = calculation.debits.filter(_.dueDate.isBefore(calculation.startDate)).flatMap {
       processDebit
     }
 
-    val totalHistocInterest = (for {
+    val totalHistoricInterest = (for {
       debit <- overallDebits.filterNot(_.dueDate.isAfter(calculation.startDate))
     } yield calculateHistoricInterest(debit)).sum
+
+    val initialPaymentInterest = if(calculation.initialPayment > 0)
+      calculateInitialPaymentInterest(calculation.debits.filter(_.dueDate.isBefore(calculation.startDate.plusWeeks(1))))
+    else BigDecimal(0)
 
     val instalments = calculateStagedPayments(overallDebits)
 
     val amountToPay = calculation.debits.map(_.amount).sum
 
-    val totalInterest =  (instalments.map(_.interest).sum + totalHistocInterest).setScale(2, HALF_UP)
+    val totalInterest = (instalments.map(_.interest).sum + totalHistoricInterest + initialPaymentInterest).setScale(2, HALF_UP)
 
     PaymentSchedule(calculation.startDate, calculation.endDate, calculation.initialPayment, amountToPay,
       amountToPay - calculation.initialPayment, totalInterest, amountToPay + totalInterest,

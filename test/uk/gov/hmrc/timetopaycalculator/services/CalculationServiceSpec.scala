@@ -52,7 +52,7 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
                 new debit( 607.40, "2016-01-01", "2016-01-01")),  LocalDate.parse("2016-09-02"),  LocalDate.parse("2027-07-02"), LocalDate.parse("2016-08-30"),   385.00,                     130,              4870.60,        1140.10,           35.00,            35.00),
       ("IDMS-C", Seq(new debit(1784.53, "2016-07-31", "2016-07-31")),  LocalDate.parse("2016-09-09"),  LocalDate.parse("2017-09-29"),  LocalDate.parse("2016-08-30"),  149.18,                      13,              1811.45,          26.92,          149.18,           149.18),
 */
-      ("IRIS-1", Seq(new debit(5000.0, "2016-09-03", "2016-09-03")), LocalDate.parse("2016-09-03"), LocalDate.parse("2017-03-10"), LocalDate.parse("2016-09-10"),   1500.0, 7, 5026.07, 26.07, 500.00, 526.07)
+      ("IRIS-1", Seq(new debit(5000.0, "2016-09-03", "2016-09-03")), LocalDate.parse("2016-09-03"), LocalDate.parse("2017-03-10"), LocalDate.parse("2016-09-10"),   1500.0, 7, 5029.08, 29.08, 500.00, 529.08)
     )
 
     forAll(table) { (id, debits, startDate, endDate, firstPaymentDate, initialPayment, repaymentCount, amountToPay, totalInterest, regularAmount, finalAmount) =>
@@ -97,12 +97,12 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
       (Seq(new debit(1000.0, "2016-08-01", "2016-10-01"),
         new debit(500.0, "2016-09-01", "2016-09-01"),
         new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 2000.0, 2000.0, 3.18, 2003.18),
-      (Seq(new debit(1000.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1000.0, 0.0, 0.00, 1000.00),
+      (Seq(new debit(1000.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1000.0, 0.0, 0.6, 1000.60),
       (Seq(new debit(500.0, "2016-09-01", "2016-09-01"),
-        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1000.0, 0.0, 0.00, 1000.00),
+        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1000.0, 0.0, 0.6, 1000.60),
       (Seq(new debit(500.0, "2016-09-01", "2016-09-01"),
         new debit(500.0, "2016-09-01", "2016-09-01"),
-        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1500.0, 500.0, 1.18, 1501.18)
+        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1500.0, 500.0, 2.08, 1502.08)
 
     )
     
