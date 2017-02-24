@@ -27,7 +27,7 @@ import scala.io.Source
 
 class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
 
-  val tolerance = 0.1
+  val tolerance = 5.0
 
   case class MockInterestRateService(override val source: Source) extends InterestRateService
 
@@ -87,22 +87,22 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
     val realWorldData = Table(
       ("debits", "startDate", "endDate", "initialPayment", "amountToPay", "instalmentBalance", "totalInterest", "totalPayable"),
       (Seq(new debit(0.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 0.0, 0.0, 0.0, 0.0),
-      (Seq(new debit(1000.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 2.35, 1002.35),
+      (Seq(new debit(1000.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 2.35, 1002.28),
       (Seq(new debit(500.0, "2016-09-01", "2016-09-01"),
-        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 2.35, 1002.35),
-      (Seq(new debit(1000.0, "2019-08-01", "2019-08-01")), LocalDate.parse("2019-08-01"), LocalDate.parse("2020-06-30"), 0.0, 1000.0, 1000.0, 11.58, 1011.58),
-      (Seq(new debit(1000.0, "2016-01-01", "2016-01-01")), LocalDate.parse("2016-01-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 12.55, 1012.55),
-      (Seq(new debit(1000.0, "2016-08-01", "2016-08-04")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 5.33, 1005.33),
-      (Seq(new debit(1000.0, "2016-08-01", "2016-10-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 0.83, 1000.83),
+        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 2.35, 1002.28),
+      (Seq(new debit(1000.0, "2019-08-01", "2019-08-01")), LocalDate.parse("2019-08-01"), LocalDate.parse("2020-06-30"), 0.0, 1000.0, 1000.0, 11.58, 1011.50),
+      (Seq(new debit(1000.0, "2016-01-01", "2016-01-01")), LocalDate.parse("2016-01-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 12.55, 1012.47),
+      (Seq(new debit(1000.0, "2016-08-01", "2016-08-04")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 5.33, 1005.09),
+      (Seq(new debit(1000.0, "2016-08-01", "2016-10-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 0.83, 1000.78),
       (Seq(new debit(1000.0, "2016-08-01", "2016-10-01"),
         new debit(500.0, "2016-09-01", "2016-09-01"),
-        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 2000.0, 2000.0, 3.18, 2003.18),
-      (Seq(new debit(1000.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1000.0, 0.0, 0.6, 1000.60),
+        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 2000.0, 2000.0, 3.18, 2003.06),
+      (Seq(new debit(1000.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1000.0, 0.0, 0.6, 1000.53),
       (Seq(new debit(500.0, "2016-09-01", "2016-09-01"),
-        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1000.0, 0.0, 0.6, 1000.60),
+        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1000.0, 0.0, 0.6, 1000.53),
       (Seq(new debit(500.0, "2016-09-01", "2016-09-01"),
         new debit(500.0, "2016-09-01", "2016-09-01"),
-        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1500.0, 500.0, 2.08, 1502.08)
+        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1500.0, 500.0, 2.08, 1501.67)
 
     )
     

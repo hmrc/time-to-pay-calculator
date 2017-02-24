@@ -64,14 +64,25 @@ class CalculatorService(interestService: InterestRateService, durationService: D
   def calculateInitialPaymentInterest(debits: Seq[Debit])(implicit calculation: Calculation): BigDecimal = {
     val currentInterestRate = InterestRateService.rateOn(calculation.startDate).getOrElse(InterestRate.NONE).rate
     val currentDailyRate = currentInterestRate / BigDecimal(Year.of(calculation.startDate.getYear).length()) / BigDecimal(100)
-    debits.map {
+    var downPayment = calculation.initialPayment
+
+    debits.sortBy(_.dueDate).map {
       debit =>
+        val amount = if (downPayment > debit.amount) {
+          downPayment = downPayment - debit.amount
+          debit.amount
+        } else {
+          val toReturn = downPayment
+          downPayment = 0
+          toReturn
+        }
+
         val daysOfInterest = if(debit.dueDate.isBefore(calculation.startDate))
           configuration.getInt("defaultInitialPaymentDays").getOrElse(7)
         else
           durationService.getDaysBetween(debit.dueDate, calculation.startDate.plusWeeks(1))
 
-        val interest = daysOfInterest * currentDailyRate * debit.amount
+        val interest = daysOfInterest * currentDailyRate * amount
         logger.info(s"Initial payment interest of $interest at $daysOfInterest days at rate $currentDailyRate")
         interest
     }.sum
