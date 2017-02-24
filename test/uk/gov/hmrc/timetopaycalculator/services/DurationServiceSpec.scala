@@ -21,7 +21,7 @@ import java.time.LocalDate
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
-class DurationServiceSpec extends UnitSpec with WithFakeApplication {
+class DurationServiceSpec extends UnitSpec  {
   "The DurationService" should {
     val service = DurationService
 

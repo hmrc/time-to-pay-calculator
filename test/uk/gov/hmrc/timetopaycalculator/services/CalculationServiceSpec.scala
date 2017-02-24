@@ -25,7 +25,7 @@ import uk.gov.hmrc.timetopaycalculator.models.{Calculation, Debit, Interest, Pay
 
 import scala.io.Source
 
-class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
+class CalculationServiceSpec extends UnitSpec  {
 
   val tolerance = 0.1
 

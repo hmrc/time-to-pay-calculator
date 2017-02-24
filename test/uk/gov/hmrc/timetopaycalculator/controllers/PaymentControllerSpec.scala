@@ -16,6 +16,9 @@
 
 package uk.gov.hmrc.timetopaycalculator.controllers
 
+import javax.inject.Inject
+
+import akka.stream.Materializer
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
@@ -23,7 +26,7 @@ import play.mvc.Http.Status._
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.timetopaycalculator.models.PaymentSchedule
 
-class PaymentControllerSpec extends UnitSpec with WithFakeApplication {
+class PaymentControllerSpec @Inject()(implicit val mat: Materializer)  extends UnitSpec {
 
   "The payment controller" should {
     val inputStatusData = Table(
