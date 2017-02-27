@@ -8,7 +8,6 @@ object MicroServiceBuild extends Build with MicroService {
 }
 
 private object AppDependencies {
-  import play.core.PlayVersion
   import play.sbt.PlayImport._
 
   private val scalaTestVersion = "2.2.6"
@@ -36,7 +35,7 @@ private object AppDependencies {
         "uk.gov.hmrc" %% "hmrctest" %  "2.3.0",
         "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
-        "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
+        "com.typesafe.play" %% "play-test" % "2.5.8" % scope,
         "com.github.tomakehurst" % "wiremock" % "1.58" % scope,
         "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope,
         "org.mockito" % "mockito-core" % "2.7.0" % scope
@@ -53,7 +52,7 @@ private object AppDependencies {
         "uk.gov.hmrc" %% "hmrctest" %  "1.9.0",
         "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
-        "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
+        "com.typesafe.play" %% "play-test" % "2.5.8" % scope,
         "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope,
         "org.mockito" % "mockito-core" % "2.7.0" % scope
       )

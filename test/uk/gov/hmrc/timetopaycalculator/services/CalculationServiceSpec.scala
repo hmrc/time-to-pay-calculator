@@ -19,13 +19,14 @@ package uk.gov.hmrc.timetopaycalculator.services
 import java.time.LocalDate
 
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatestplus.play.OneAppPerSuite
 import play.api.Logger
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.timetopaycalculator.models.{Calculation, Debit, Interest, PaymentSchedule}
 
 import scala.io.Source
 
-class CalculationServiceSpec extends UnitSpec  {
+class CalculationServiceSpec extends UnitSpec  with OneAppPerSuite{
 
   val tolerance = 0.1
 
