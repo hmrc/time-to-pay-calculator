@@ -24,7 +24,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 class DurationServiceSpec extends UnitSpec  with OneAppPerSuite{
   "The DurationService" should {
-    val service = DurationService
+    val service = new DurationService
 
     val periodCalculationData = Table(
       ("startDate", "endDate", "periods", "description"),

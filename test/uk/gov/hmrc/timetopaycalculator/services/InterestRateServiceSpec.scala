@@ -27,8 +27,8 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import scala.io.Source
 
 class InterestRateServiceSpec extends UnitSpec  with OneAppPerSuite{
-
-  case class IRS(filename: String) extends InterestRateService {
+  val InterestRateService = new InterestRateService
+  case class IRS(override val filename: String) extends InterestRateService {
     override val source = Source.fromInputStream(getClass.getResourceAsStream(filename))
   }
 
