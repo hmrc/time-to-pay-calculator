@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.timetopaycalculator
 
-import play.api.Application
 import uk.gov.hmrc.play.audit.http.config.LoadAuditingConfig
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector

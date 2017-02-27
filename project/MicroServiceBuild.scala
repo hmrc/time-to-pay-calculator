@@ -8,11 +8,9 @@ object MicroServiceBuild extends Build with MicroService {
 }
 
 private object AppDependencies {
-  import play.sbt.PlayImport._
   import play.core.PlayVersion
+  import play.sbt.PlayImport._
 
-  private val logbackJsonLoggerVersion = "3.1.0"
-  private val playUrlBindersVersion = "1.1.0"
   private val scalaTestVersion = "2.2.6"
   private val pegdownVersion = "1.6.0"
 
@@ -22,9 +20,9 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "play-authorisation" %  "4.3.0",
     "uk.gov.hmrc" %% "play-health" %  "2.1.0",
     "uk.gov.hmrc" %% "play-url-binders" %  "2.1.0",
-    "uk.gov.hmrc" %% "play-config" %  "3.1.0",
-    "uk.gov.hmrc" %% "logback-json-logger" % logbackJsonLoggerVersion,
-    "uk.gov.hmrc" %% "domain" %  "4.0.0"
+    "uk.gov.hmrc" %% "play-config" %  "4.2.0",
+    "uk.gov.hmrc" %% "logback-json-logger" % "3.1.0",
+    "uk.gov.hmrc" %% "domain" %  "4.1.0"
   )
 
   trait TestDependencies {
@@ -39,7 +37,9 @@ private object AppDependencies {
         "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-        "com.github.tomakehurst" % "wiremock" % "1.58" % scope
+        "com.github.tomakehurst" % "wiremock" % "1.58" % scope,
+        "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope,
+        "org.mockito" % "mockito-core" % "2.7.0" % scope
       )
     }.test
   }
@@ -54,7 +54,8 @@ private object AppDependencies {
         "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-        "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope
+        "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope,
+        "org.mockito" % "mockito-core" % "2.7.0" % scope
       )
     }.test
   }
