@@ -25,13 +25,9 @@ import uk.gov.hmrc.timetopaycalculator.models.InterestRate
 
 import scala.io.Source
 
-object InterestRateService extends InterestRateService {
+class InterestRateService {
   val filename: String = "/interestRates.csv"
-  override val source = Source.fromInputStream(getClass.getResourceAsStream(filename))
-}
-
-trait InterestRateService {
-  val source: Source
+  val source: Source = Source.fromInputStream(getClass.getResourceAsStream(filename))
   val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
 
   lazy val rates: Seq[InterestRate] = streamInterestRates()
