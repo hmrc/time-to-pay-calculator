@@ -17,13 +17,14 @@
 package uk.gov.hmrc.timetopaycalculator.services
 
 import java.time.{LocalDate, Year}
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 
 import play.api.Logger._
 import uk.gov.hmrc.timetopaycalculator.models._
 
 import scala.math.BigDecimal.RoundingMode.HALF_UP
 
+@Singleton
 class CalculatorService @Inject() (val interestService: InterestRateService) (val durationService: DurationService) {
   object DebitDueAndCalculationDatesWithinRate extends Tuple2(true, true)
   object DebitDueDateWithinRate extends Tuple2(true, false)

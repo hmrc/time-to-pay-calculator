@@ -19,12 +19,14 @@ package uk.gov.hmrc.timetopaycalculator.services
 import java.io.FileNotFoundException
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import javax.inject.Singleton
 
 import play.api.Logger
 import uk.gov.hmrc.timetopaycalculator.models.InterestRate
 
 import scala.io.Source
 
+@Singleton
 class InterestRateService {
   val filename: String = "/interestRates.csv"
   val source: Source = Source.fromInputStream(getClass.getResourceAsStream(filename))

@@ -19,7 +19,10 @@ package uk.gov.hmrc.timetopaycalculator.services
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.time.temporal.ChronoUnit._
+import javax.inject.Singleton
 
+
+@Singleton
 class DurationService {
   def getDaysBetween(startDate: LocalDate, endDate: LocalDate, inclusive: Boolean = true): Long = calculatePeriod(startDate, endDate, DAYS, inclusive)
 
