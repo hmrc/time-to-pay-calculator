@@ -61,35 +61,78 @@ class CalculatorService(interestService: InterestRateService, durationService: D
     }
   }
 
+  /**
+    * Calculate interest for the initial payment amount for the first 7 days until it (the initial payment) is taken out of the taxpayer's account
+    *
+    * @param debits - only debits that are not after calculation date plus a week
+    * @param calculation
+    * @return
+    */
   def calculateInitialPaymentInterest(debits: Seq[Debit])(implicit calculation: Calculation): BigDecimal = {
     val currentInterestRate = InterestRateService.rateOn(calculation.startDate).getOrElse(InterestRate.NONE).rate
     val currentDailyRate = currentInterestRate / BigDecimal(Year.of(calculation.startDate.getYear).length()) / BigDecimal(100)
-    debits.map {
+
+    var downPayment = calculation.initialPayment
+
+    debits.sortBy(_.dueDate).map {
       debit =>
+        // you can replace the below with a recursive function
+        val amount =
+          // if the downpayment is greater than the amount, [charge up to 7 days interest on] the total amount of the debit
+          if (downPayment > debit.amount) {
+            // carry leftover downpayment across remaining debts
+            downPayment -= debit.amount
+            debit.amount
+        } else {
+          // charge interest on the [leftover] downpayment amount, clear downpayment as it is now exhausted
+          val toReturn = downPayment
+          downPayment = 0
+          toReturn
+        }
+
         val daysOfInterest = if(debit.dueDate.isBefore(calculation.startDate))
           configuration.getInt("defaultInitialPaymentDays").getOrElse(7)
         else
           durationService.getDaysBetween(debit.dueDate, calculation.startDate.plusWeeks(1))
 
-        val interest = daysOfInterest * currentDailyRate * debit.amount
+        val interest = daysOfInterest * currentDailyRate * amount
         logger.info(s"Initial payment interest of $interest at $daysOfInterest days at rate $currentDailyRate")
         interest
     }.sum
   }
 
+//  private def calculateInitialInterest(debit: Debit, amount: BigDecimal): BigDecimal = {
+//
+//  }
+//  private def calculateDownPayment(debit: Debit)(implicit calculation: Calculation): BigDecimal = {
+//    val downPayment = calculation.initialPayment
+//
+//    if (downPayment > debit.amount) {
+//      downPayment = downPayment - debit.amount
+//      debit.amount
+//    } else {
+//      val toReturn = downPayment
+//      downPayment = 0
+//      toReturn
+//    }
+//  }
   def buildSchedule(implicit calculation: Calculation): PaymentSchedule = {
+    // set interest dates on the debits per year
     val overallDebits = calculation.debits.filter(_.dueDate.isBefore(calculation.startDate)).flatMap {
       processDebit
     }
 
+    // calculate interest on old debts that have incurred interest up to the point of the current calculation date (now)
     val totalHistoricInterest = (for {
       debit <- overallDebits.filterNot(_.dueDate.isAfter(calculation.startDate))
     } yield calculateHistoricInterest(debit)).sum
 
+    // calculate interest for the first 7 days until the initial payment is actually taken out of the taxpayer's account
     val initialPaymentInterest = if(calculation.initialPayment > 0)
       calculateInitialPaymentInterest(calculation.debits.filter(_.dueDate.isBefore(calculation.startDate.plusWeeks(1))))
     else BigDecimal(0)
 
+    // calculate the schedule of regular payments on the overall amount
     val instalments = calculateStagedPayments(overallDebits)
 
     val amountToPay = calculation.debits.map(_.amount).sum

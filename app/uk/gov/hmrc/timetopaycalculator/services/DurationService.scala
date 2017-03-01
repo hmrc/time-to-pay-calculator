@@ -32,7 +32,7 @@ trait DurationService {
   }
 
   private def calculatePeriod(startDate: LocalDate, endDate: LocalDate, frequency: ChronoUnit, inclusive: Boolean): Long = {
-    frequency.between(startDate, endDate) + (if (inclusive) 1 else 0) match {
+    frequency.between(startDate, endDate) + (if (inclusive) 0 else -1) match {
       case c if c > 0 => c
       case _ => 0
     }
