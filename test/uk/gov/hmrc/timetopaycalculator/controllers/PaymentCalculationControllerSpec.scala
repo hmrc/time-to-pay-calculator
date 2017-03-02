@@ -16,14 +16,23 @@
 
 package uk.gov.hmrc.timetopaycalculator.controllers
 
+import javax.inject.Inject
+
+import akka.stream.Materializer
+import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatestplus.play.OneAppPerSuite
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.mvc.Http.Status._
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.timetopaycalculator.models.PaymentSchedule
+import uk.gov.hmrc.timetopaycalculator.services.CalculatorService
 
-class PaymentControllerSpec extends UnitSpec with WithFakeApplication {
+class PaymentCalculationControllerSpec @Inject() (implicit val materializer: Materializer) extends UnitSpec with MockitoSugar with OneAppPerSuite {
+  val mockCalculatorService: CalculatorService = mock[CalculatorService]
+  val paymentCalculationController = new PaymentCalculationController(mockCalculatorService)
+
 
   "The payment controller" should {
     val inputStatusData = Table(
@@ -52,7 +61,7 @@ class PaymentControllerSpec extends UnitSpec with WithFakeApplication {
 
     forAll(inputStatusData) { (input, statusCode) =>
       s"vary the status according to the input validity: input $input = $statusCode" in {
-        val response = PaymentCalculationController.generate()(FakeRequest("POST", "/paymentschedule").withBody(Json.parse(input)))
+        val response = paymentCalculationController.generate()(FakeRequest("POST", "/paymentschedule").withBody(Json.parse(input)))
         status(response) shouldBe statusCode
       }
     }
@@ -64,7 +73,7 @@ class PaymentControllerSpec extends UnitSpec with WithFakeApplication {
               "interest" : { "amountAccrued": 0.0, "calculationDate" : "2016-09-01"},
               "dueDate" : "2016-09-01"}]}"""
 
-      val response = PaymentCalculationController.generate()(FakeRequest("POST", "/paymentschedule").withBody(Json.parse(input)))
+      val response = paymentCalculationController.generate()(FakeRequest("POST", "/paymentschedule").withBody(Json.parse(input)))
       val schedule = await(jsonBodyOf(response)).as[Seq[PaymentSchedule]]
 
       schedule.head.totalPayable.doubleValue() shouldBe (1002.27 +- 0.1)
@@ -103,7 +112,7 @@ class PaymentControllerSpec extends UnitSpec with WithFakeApplication {
 
     forAll(unhappyData) { (input, fieldName, errorName) =>
       s"verify the unhappy path: input: $fieldName = $errorName" in {
-        val response = PaymentCalculationController.generate()(FakeRequest("POST", "/paymentschedule").withHeaders(("Accepts", "application/json"), ("Content-Type", "application/json")).withBody(Json.parse(input)))
+        val response = paymentCalculationController.generate()(FakeRequest("POST", "/paymentschedule").withHeaders(("Accepts", "application/json"), ("Content-Type", "application/json")).withBody(Json.parse(input)))
 
         status(response) shouldBe 400
       }

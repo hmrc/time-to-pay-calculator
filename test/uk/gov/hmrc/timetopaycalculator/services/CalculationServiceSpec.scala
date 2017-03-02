@@ -18,19 +18,22 @@ package uk.gov.hmrc.timetopaycalculator.services
 
 import java.time.LocalDate
 
+import org.mockito.Mockito
+import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatestplus.play.OneAppPerSuite
 import play.api.Logger
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.timetopaycalculator.models.{Calculation, Debit, Interest, PaymentSchedule}
 
 import scala.io.Source
 
-class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
+class CalculationServiceSpec extends UnitSpec with OneAppPerSuite with MockitoSugar{
 
   val tolerance = 5.0
-
+  val durationServiceMock=  new DurationService
+  val InterestRateServiceMock = new InterestRateService
   case class MockInterestRateService(override val source: Source) extends InterestRateService
-
   class debit(amt: BigDecimal, calcTo: String, due: String) extends Debit(Some("POA1"), amt.setScale(2), Some(Interest(BigDecimal(0), LocalDate.parse(calcTo))), LocalDate.parse(due))
 
   "The calculator service" should {
@@ -59,9 +62,8 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
       s"calculate interest for scenario $id" in {
         val rates = "23 Aug 2016,2.75\n29 Sep 2009,3.00"
         val rateData = Source.fromChars(rates.toCharArray)
-
         def mockIRService = MockInterestRateService(source = rateData)
-        def mockService = new CalculatorService(mockIRService, DurationService)
+        def mockService = new CalculatorService(mockIRService)(durationServiceMock)
 
         val calculation = Calculation(debits, initialPayment, startDate, endDate, Some(firstPaymentDate), "MONTHLY")
 
@@ -109,7 +111,8 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
     forAll(realWorldData) { (debits, startDate, endDate, initialPayment, amountToPay, instalmentBalance, totalInterest, totalPayable) =>
       s"calculate interest of $totalInterest for an input debt of $debits to be paid between $startDate and $endDate with an initial payment of $initialPayment" in {
         val calculation = Calculation(debits, initialPayment, startDate, endDate, None, "MONTHLY")
-        val schedule = new CalculatorService(InterestRateService, DurationService).generateMultipleSchedules(calculation).head
+
+        val schedule = new CalculatorService(InterestRateServiceMock)(durationServiceMock).generateMultipleSchedules(calculation).head
         schedule.amountToPay.doubleValue() shouldBe (amountToPay.doubleValue() +- tolerance)
         schedule.initialPayment shouldBe initialPayment
         schedule.instalmentBalance shouldBe instalmentBalance
@@ -127,7 +130,7 @@ class CalculationServiceSpec extends UnitSpec with WithFakeApplication {
     forAll(instalmentCalcData) { (debits, startDate, endDate, initialPayment, months) =>
       s"generate an instalment plan of $months for a given debt $debits and period from $startDate to $endDate" in {
         val calculation = Calculation(debits, initialPayment, startDate, endDate, None, "MONTHLY")
-        val schedule = new CalculatorService(InterestRateService, DurationService).generateMultipleSchedules(calculation).head
+        val schedule = new CalculatorService(InterestRateServiceMock)(durationServiceMock).generateMultipleSchedules(calculation).head
 
         schedule.instalments.size shouldBe months
         schedule.instalments.map {

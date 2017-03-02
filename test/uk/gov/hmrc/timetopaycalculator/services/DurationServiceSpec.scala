@@ -19,11 +19,12 @@ package uk.gov.hmrc.timetopaycalculator.services
 import java.time.LocalDate
 
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatestplus.play.OneAppPerSuite
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
-class DurationServiceSpec extends UnitSpec with WithFakeApplication {
+class DurationServiceSpec extends UnitSpec  with OneAppPerSuite{
   "The DurationService" should {
-    val service = DurationService
+    val service = new DurationService
 
     val periodCalculationData = Table(
       ("startDate", "endDate", "periods", "description"),
