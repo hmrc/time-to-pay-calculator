@@ -42,7 +42,17 @@ trait MicroService {
       libraryDependencies ++= appDependencies,
       retrieveManaged := true,
       evictionWarningOptions in update := EvictionWarningOptions.default.withWarnScalaVersionEviction(false),
-      routesGenerator := StaticRoutesGenerator
+      routesGenerator := StaticRoutesGenerator,
+      scalacOptions += "-feature",
+      scalacOptions in (Compile, compile) ++= Seq(
+        "-Ywarn-dead-code",
+        "-Ywarn-unused",
+        "-Ywarn-inaccessible",
+        "-Ywarn-value-discard",
+        "-unchecked",
+        "Ywarn-nullary-unit",
+        "-Xfuture"
+      )
     )
     .configs(IntegrationTest)
     .settings(inConfig(IntegrationTest)(Defaults.itSettings): _*)

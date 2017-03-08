@@ -19,17 +19,14 @@ package uk.gov.hmrc.timetopaycalculator.services
 import java.time.{LocalDate, Year}
 import javax.inject.{Inject, Singleton}
 
+import play.api.Configuration
 import play.api.Logger._
-import play.api.Play.{configuration, current}
 import uk.gov.hmrc.timetopaycalculator.models._
 
 import scala.math.BigDecimal.RoundingMode.HALF_UP
 
 @Singleton
 class CalculatorService @Inject() (val interestService: InterestRateService) (val durationService: DurationService) {
-  object DebitDueAndCalculationDatesWithinRate extends Tuple2(true, true)
-  object DebitDueDateWithinRate extends Tuple2(true, false)
-  object CalculationDateWithinRate extends Tuple2(false, true)
 
   implicit def orderingLocalDate: Ordering[LocalDate] = Ordering.fromLessThan(_ isBefore _)
 
@@ -91,9 +88,8 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
           downPayment = 0
           toReturn
         }
-
-        val daysOfInterest = if(debit.dueDate.isBefore(calculation.startDate))
-          configuration.getInt("defaultInitialPaymentDays").getOrElse(7)
+             val daysOfInterest = if(debit.dueDate.isBefore(calculation.startDate))
+          Configuration.load(play.Environment.simple().underlying()).getInt("defaultInitialPaymentDays").getOrElse(7)
         else
           durationService.getDaysBetween(debit.dueDate, calculation.startDate.plusWeeks(1))
 
@@ -145,6 +141,10 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
       amountToPay - calculation.initialPayment, totalInterest, amountToPay + totalInterest,
       instalments.init :+ Instalment(instalments.last.paymentDate, instalments.last.amount + totalInterest, instalments.last.interest))
   }
+
+  val DebitDueAndCalculationDatesWithinRate = Tuple2(true, true)
+  val DebitDueDateWithinRate = Tuple2(true, false)
+  val CalculationDateWithinRate = Tuple2(false, true)
 
   private def processDebit(implicit calculation: Calculation): (Debit) => Seq[Debit] = { debit =>
     interestService.getRatesForPeriod(debit.dueDate, calculation.endDate).map { rate =>
