@@ -74,33 +74,63 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
     val currentInterestRate = interestService.rateOn(calculation.startDate).getOrElse(InterestRate.NONE).rate
     val currentDailyRate = currentInterestRate / BigDecimal(Year.of(calculation.startDate.getYear).length()) / BigDecimal(100)
 
-    var downPayment = calculation.initialPayment
+    //var downPayment = calculation.initialPayment
 
-    debits.sortBy(_.dueDate).map {
-      debit =>
-        // you can replace the below with a recursive function
-        val amount =
-          // if the downpayment is greater than the amount, [charge up to 7 days interest on] the total amount of the debit
-          if (downPayment > debit.amount) {
-            // carry leftover downpayment across remaining debts
-            downPayment -= debit.amount
-            debit.amount
-        } else {
-          // charge interest on the [leftover] downpayment amount, clear downpayment as it is now exhausted
-          val toReturn = downPayment
-          downPayment = 0
-          toReturn
-        }
+    val sortedDebits: Seq[Debit] = debits.sortBy(_.dueDate)
 
-        val daysOfInterest = if(debit.dueDate.isBefore(calculation.startDate))
-          configuration.getInt("defaultInitialPaymentDays").getOrElse(7)
-        else
-          durationService.getDaysBetween(debit.dueDate, calculation.startDate.plusWeeks(1))
+    def processDebits(amount: BigDecimal, debits: Seq[Debit]): BigDecimal = {
+      debits match {
+        case debit :: remaining =>
+          val result = calculateAmount(amount, debit)
+          processDebits(result._2, remaining) + (result._1 * calculateDays(debit) * currentDailyRate)
+        case debit :: Nil => calculateAmount(amount, debit)._1 * calculateDays(debit) * currentDailyRate
+        case Nil => 0
+      }
+    }
 
-        val interest = daysOfInterest * currentDailyRate * amount
-        logger.info(s"Initial payment interest of $interest at $daysOfInterest days at rate $currentDailyRate")
-        interest
-    }.sum
+    def calculateDays(debit: Debit): Long = {
+      if(debit.dueDate.isBefore(calculation.startDate))
+        configuration.getLong("defaultInitialPaymentDays").getOrElse(7)
+      else
+        durationService.getDaysBetween(debit.dueDate, calculation.startDate.plusWeeks(1))
+    }
+
+    //return - amount (used in the calculation), remaining downPayment
+    def calculateAmount(amount: BigDecimal, debit: Debit): (BigDecimal, BigDecimal) = {
+      if(amount > debit.amount) {
+        (debit.amount, amount - debit.amount)
+      } else {
+        (amount, 0)
+      }
+    }
+
+    processDebits(calculation.initialPayment, sortedDebits)
+
+//    debits.sortBy(_.dueDate).map {
+//      debit =>
+//        // you can replace the below with a recursive function
+//        val amount =
+//          // if the downpayment is greater than the amount, [charge up to 7 days interest on] the total amount of the debit
+//          if (downPayment > debit.amount) {
+//            // carry leftover downpayment across remaining debts
+//            downPayment -= debit.amount
+//            debit.amount
+//        } else {
+//          // charge interest on the [leftover] downpayment amount, clear downpayment as it is now exhausted
+//          val toReturn = downPayment
+//          downPayment = 0
+//          toReturn
+//        }
+//
+//        val daysOfInterest = if(debit.dueDate.isBefore(calculation.startDate))
+//          configuration.getInt("defaultInitialPaymentDays").getOrElse(7)
+//        else
+//          durationService.getDaysBetween(debit.dueDate, calculation.startDate.plusWeeks(1))
+//
+//        val interest = daysOfInterest * currentDailyRate * amount
+//        logger.info(s"Initial payment interest of $interest at $daysOfInterest days at rate $currentDailyRate")
+//        interest
+//    }.sum
   }
 
 //  private def calculateInitialInterest(debit: Debit, amount: BigDecimal): BigDecimal = {
