@@ -36,12 +36,23 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
   def generateMultipleSchedules(implicit calculation: Calculation):Seq[PaymentSchedule] =
     Seq(buildSchedule).map { s => logger.info(s"Payment Schedule: $s"); s }
 
-  def calculateStagedPayments(overallDebits: Seq[Debit])(implicit calculation: Calculation): Seq[Instalment] = {
+  /**
+    * Calculate instalments including interest charged on each instalment, while taking into account
+    * interest is not charged on debts where initial payment fully or partially clears the oldest debts or
+    * if the debt is not liable for interest (due in the future after the end date)
+    *
+    * @param calculation
+    * @return
+    */
+  def calculateStagedPayments(implicit calculation: Calculation): Seq[Instalment] = {
+    //get the dates of each instalment payment
     val repayments = durationService.getRepaymentDates(calculation.getFirstPaymentDate, calculation.endDate)
     val numberOfPayments = BigDecimal(repayments.size)
 
-    val instalments = calculation.debits.flatMap { debit =>
+    val instalments = calculation.debits.sortBy(_.dueDate).flatMap { debit =>
+      //subtract the initial payment amount from the debts, beginning with the oldest
       val principal = calculation.applyInitialPaymentToDebt(debit.amount)
+
       val monthlyCapitalRepayment = (principal / numberOfPayments).setScale(2, HALF_UP)
       val calculationDate = if (calculation.startDate.isBefore(debit.dueDate)) debit.dueDate else calculation.startDate
       val currentInterestRate = interestService.rateOn(calculationDate).getOrElse(InterestRate.NONE).rate
@@ -58,6 +69,7 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
       }
     }
 
+    // combine instalments that are on the same day
     repayments.map { x =>
       instalments.filter(_.paymentDate.isEqual(x)).reduce( (z, y) => Instalment(z.paymentDate, z.amount + y.amount, z.interest + y.interest))
     }
@@ -73,8 +85,6 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
   def calculateInitialPaymentInterest(debits: Seq[Debit])(implicit calculation: Calculation): BigDecimal = {
     val currentInterestRate = interestService.rateOn(calculation.startDate).getOrElse(InterestRate.NONE).rate
     val currentDailyRate = currentInterestRate / BigDecimal(Year.of(calculation.startDate.getYear).length()) / BigDecimal(100)
-
-    //var downPayment = calculation.initialPayment
 
     val sortedDebits: Seq[Debit] = debits.sortBy(_.dueDate)
 
@@ -105,49 +115,15 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
     }
 
     processDebits(calculation.initialPayment, sortedDebits)
-
-//    debits.sortBy(_.dueDate).map {
-//      debit =>
-//        // you can replace the below with a recursive function
-//        val amount =
-//          // if the downpayment is greater than the amount, [charge up to 7 days interest on] the total amount of the debit
-//          if (downPayment > debit.amount) {
-//            // carry leftover downpayment across remaining debts
-//            downPayment -= debit.amount
-//            debit.amount
-//        } else {
-//          // charge interest on the [leftover] downpayment amount, clear downpayment as it is now exhausted
-//          val toReturn = downPayment
-//          downPayment = 0
-//          toReturn
-//        }
-//
-//        val daysOfInterest = if(debit.dueDate.isBefore(calculation.startDate))
-//          configuration.getInt("defaultInitialPaymentDays").getOrElse(7)
-//        else
-//          durationService.getDaysBetween(debit.dueDate, calculation.startDate.plusWeeks(1))
-//
-//        val interest = daysOfInterest * currentDailyRate * amount
-//        logger.info(s"Initial payment interest of $interest at $daysOfInterest days at rate $currentDailyRate")
-//        interest
-//    }.sum
   }
 
-//  private def calculateInitialInterest(debit: Debit, amount: BigDecimal): BigDecimal = {
-//
-//  }
-//  private def calculateDownPayment(debit: Debit)(implicit calculation: Calculation): BigDecimal = {
-//    val downPayment = calculation.initialPayment
-//
-//    if (downPayment > debit.amount) {
-//      downPayment = downPayment - debit.amount
-//      debit.amount
-//    } else {
-//      val toReturn = downPayment
-//      downPayment = 0
-//      toReturn
-//    }
-//  }
+  /**
+    * Build a PaymentSchedule, calculated in parts - historic interest (in the past up to start date),
+    * initial payment interest, future interest (start date going forward) and instalments (monthly payments).
+    *
+    * @param calculation
+    * @return
+    */
   def buildSchedule(implicit calculation: Calculation): PaymentSchedule = {
     // set interest dates on the debits per year
     val overallDebits = calculation.debits.filter(_.dueDate.isBefore(calculation.startDate)).flatMap {
@@ -164,9 +140,10 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
       calculateInitialPaymentInterest(calculation.debits.filter(_.dueDate.isBefore(calculation.startDate.plusWeeks(1))))
     else BigDecimal(0)
 
-    // calculate the schedule of regular payments on the overall amount
-    val instalments = calculateStagedPayments(overallDebits)
+    // calculate the schedule of regular payments on the all debits due before endDate
+    val instalments = calculateStagedPayments
 
+    // total amount of debt without interest
     val amountToPay = calculation.debits.map(_.amount).sum
 
     val totalInterest = (instalments.map(_.interest).sum + totalHistoricInterest + initialPaymentInterest).setScale(2, HALF_UP)
