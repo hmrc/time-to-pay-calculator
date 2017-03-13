@@ -50,7 +50,7 @@ trait MicroService {
         "-Ywarn-inaccessible",
         "-Ywarn-value-discard",
         "-unchecked",
-        "Ywarn-nullary-unit",
+        "-Ywarn-nullary-unit",
         "-Xfuture"
       )
     )
