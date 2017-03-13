@@ -50,11 +50,22 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
     val numberOfPayments = BigDecimal(repayments.size)
 
     val instalments = calculation.debits.sortBy(_.dueDate).flatMap { debit =>
+      //check if initial payment has been cleared - if not then date to calculate interest from is a week later
+      val calculateFrom = if(calculation.initialPaymentRemaining > 0)
+        calculation.startDate.plusWeeks(1)
+      else
+        calculation.startDate
+
+      val calculationDate = if (calculateFrom.isBefore(debit.dueDate))
+        debit.dueDate
+      else
+        calculateFrom
+
       //subtract the initial payment amount from the debts, beginning with the oldest
       val principal = calculation.applyInitialPaymentToDebt(debit.amount)
 
       val monthlyCapitalRepayment = (principal / numberOfPayments).setScale(2, HALF_UP)
-      val calculationDate = if (calculation.startDate.isBefore(debit.dueDate)) debit.dueDate else calculation.startDate
+
       val currentInterestRate = interestService.rateOn(calculationDate).getOrElse(InterestRate.NONE).rate
       val currentDailyRate = currentInterestRate / BigDecimal(Year.of(calculationDate.getYear).length()) / BigDecimal(100)
 
