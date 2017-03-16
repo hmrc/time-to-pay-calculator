@@ -70,7 +70,7 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
       val currentDailyRate = currentInterestRate / BigDecimal(Year.of(calculationDate.getYear).length()) / BigDecimal(100)
 
       repayments.map { r =>
-        val daysInterestToCharge = BigDecimal(durationService.getDaysBetween(calculationDate, r))
+        val daysInterestToCharge = BigDecimal(durationService.getDaysBetween(calculationDate, r.plusDays(1)))
 
         val interest = monthlyCapitalRepayment  * currentDailyRate * daysInterestToCharge
 
@@ -137,13 +137,13 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
     */
   def buildSchedule(implicit calculation: Calculation): PaymentSchedule = {
     // set interest dates on the debits per year
-    val overallDebits = calculation.debits.filter(_.dueDate.isBefore(calculation.startDate)).flatMap {
+    val overallDebits = calculation.debits.filter(_.dueDate.isBefore(calculation.startDate)).map {
       processDebit
     }
 
     // calculate interest on old debts that have incurred interest up to the point of the current calculation date (now)
     val totalHistoricInterest = (for {
-      debit <- overallDebits.filterNot(_.dueDate.isAfter(calculation.startDate))
+      debit <- overallDebits.map(_.filterNot(_.dueDate.isAfter(calculation.startDate)))
     } yield calculateHistoricInterest(debit)).sum
 
     // calculate interest for the first 7 days until the initial payment is actually taken out of the taxpayer's account
@@ -164,6 +164,12 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
       instalments.init :+ Instalment(instalments.last.paymentDate, instalments.last.amount + totalInterest, instalments.last.interest))
   }
 
+  /**
+    * Get the historic interest rates that should be applied to a given debit and split the debit
+    * into multiple debits, covering each interest rate
+    * @param calculation
+    * @return
+    */
   private def processDebit(implicit calculation: Calculation): (Debit) => Seq[Debit] = { debit =>
     interestService.getRatesForPeriod(debit.dueDate, calculation.endDate).map { rate =>
       (rate.containsDate(debit.dueDate), rate.containsDate(calculation.endDate)) match {
@@ -175,22 +181,23 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
     }
   }
 
-  def historicRateDaysInclusive(debitEndDate: LocalDate)(implicit calculation: Calculation): Boolean =
-    if(debitEndDate.getYear.equals(calculation.startDate.getYear)) false else true
-
   def historicRateEndDate(debitEndDate: LocalDate)(implicit calculation: Calculation): LocalDate =
     if(debitEndDate.getYear.equals(calculation.startDate.getYear)) calculation.startDate else debitEndDate
 
-  private def calculateHistoricInterest(debit: Debit)(implicit calculation: Calculation): BigDecimal = {
-    val debitEndDate = debit.rate.getOrElse(InterestRate.NONE).endDate.get
-    val inclusive = historicRateDaysInclusive(debitEndDate) // true except the extra case of current year
-    val endDate = historicRateEndDate(debitEndDate)
+  private def calculateHistoricInterest(debits: Seq[Debit])(implicit calculation: Calculation): BigDecimal = {
+    debits.map { debit =>
+      val debitRateEndDate = debit.rate.getOrElse(InterestRate.NONE).endDate.get
+      val inclusive = if (!(debits.head.equals(debit) | debits.last.equals(debit))) 1 else 0
+      val endDate = historicRateEndDate(debitRateEndDate)
 
-    val numberOfDays = durationService.getDaysBetween(debit.dueDate, endDate, inclusive)
-    val historicRate = debit.historicDailyRate
-    val total = historicRate*debit.amount*numberOfDays
+      val numberOfDays = durationService.getDaysBetween(debit.dueDate, endDate) + inclusive
+      val historicRate = debit.historicDailyRate
+      val total = historicRate * debit.amount * numberOfDays
 
-    logger.info(s"Historic interest: rate $historicRate days $numberOfDays  amount ${debit.amount} total = $total")
-    total
+      logger.info(s"Historic interest: rate $historicRate days $numberOfDays amount ${debit.amount} total = $total")
+      logger.info(s"Debit due date: ${debit.dueDate} and end date: $endDate is inclusive: $inclusive")
+      logger.info(s"Debit Rate date: $debitRateEndDate and calculation start date: ${calculation.startDate}")
+      total
+    }.sum
   }
 }
