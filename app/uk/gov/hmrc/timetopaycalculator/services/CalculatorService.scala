@@ -38,8 +38,8 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
 
   /**
     * Calculate instalments including interest charged on each instalment, while taking into account
-    * interest is not charged on debts where initial payment fully or partially clears the oldest debts or
-    * if the debt is not liable for interest (due in the future after the end date)
+    * interest is not charged on debits where initial payment fully or partially clears the oldest debits or
+    * if the debit is not liable for interest (due in the future after the end date)
     *
     * @param calculation
     * @return
@@ -50,7 +50,7 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
     val numberOfPayments = BigDecimal(repayments.size)
 
     val instalments = calculation.debits.sortBy(_.dueDate).flatMap { debit =>
-      //check if initial payment has been cleared - if not then date to calculate interest from is a week later
+      //check if initial payment has been cleared - if not, then date to calculate interest from is a week later
       val calculateFrom = if(calculation.initialPaymentRemaining > 0)
         calculation.startDate.plusWeeks(1)
       else
