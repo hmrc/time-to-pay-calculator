@@ -17,49 +17,41 @@
 package uk.gov.hmrc.timetopaycalculator.services
 
 import java.time.LocalDate
-
-import org.mockito.Mockito
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Logger
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.timetopaycalculator.models.{Calculation, Debit, Interest, PaymentSchedule}
-
 import scala.io.Source
 
-class CalculationServiceSpec extends UnitSpec with OneAppPerSuite with MockitoSugar{
+class CalculationServiceSpec extends UnitSpec with OneAppPerSuite with MockitoSugar {
 
-  val tolerance = 5.0
   val durationServiceMock=  new DurationService
   val InterestRateServiceMock = new InterestRateService
   case class MockInterestRateService(override val source: Source) extends InterestRateService
-  class debit(amt: BigDecimal, calcTo: String, due: String) extends Debit(Some("POA1"), amt.setScale(2), Some(Interest(BigDecimal(0), LocalDate.parse(calcTo))), LocalDate.parse(due))
+
+  def debit(amt: BigDecimal, due: String) = Debit(amount = amt.setScale(2), dueDate = LocalDate.parse(due), interest = Some(Interest.none))
+  def date(date: String): LocalDate = LocalDate.parse(date)
 
   "The calculator service" should {
-    val table = Table(
-      ("id", "debits",                                           "startDate",                    "endDate",                      "firstPaymentDate",            "initialPayment",           "repaymentCount", "amountToPay",  "totalInterest",  "regularAmount",  "finalAmount"),
-/*
-      NB: These tests reflect IDMS based data which uses a different calculation mechanism to IRIS. They are commented out as a result but left intact here for reference should we need to test against IDMS logic
-
-      ("IDMS-A", Seq(new debit( 100.00, "2014-03-23", "2014-03-23"),
-                new debit( 300.00, "2014-07-10", "2014-07-10")),  LocalDate.parse("2016-08-30"),  LocalDate.parse("2017-11-09"), LocalDate.parse("2016-08-30"),    30.00,                     15,               430.68,           30.68,           30.00,            30.00),
-      ("IDMS-B", Seq(Debit("POA1", 0.0, Interest(406.89, LocalDate.now), LocalDate.now),
-                new debit(1722.10, "2013-01-31", "2013-01-31"),
-                new debit(  87.00, "2013-04-25", "2013-04-25"),
-                new debit(  87.00, "2013-09-20", "2013-09-20"),
-                new debit(  87.00, "2014-04-03", "2014-04-03"),
-                new debit( 375.80, "2013-01-01", "2013-01-01"),
-                new debit( 375.80, "2013-07-01", "2013-07-01"),
-                new debit( 388.40, "2015-01-01", "2015-01-01"),
-                new debit( 607.40, "2016-01-01", "2016-01-01")),  LocalDate.parse("2016-09-02"),  LocalDate.parse("2027-07-02"), LocalDate.parse("2016-08-30"),   385.00,                     130,              4870.60,        1140.10,           35.00,            35.00),
-      ("IDMS-C", Seq(new debit(1784.53, "2016-07-31", "2016-07-31")),  LocalDate.parse("2016-09-09"),  LocalDate.parse("2017-09-29"),  LocalDate.parse("2016-08-30"),  149.18,                      13,              1811.45,          26.92,          149.18,           149.18),
-*/
-      ("IRIS-1", Seq(new debit(5000.0, "2016-09-03", "2016-09-03")), LocalDate.parse("2016-09-03"), LocalDate.parse("2017-03-10"), LocalDate.parse("2016-09-10"),   1500.0, 7, 5029.08, 29.08, 500.00, 529.08)
+    val interestCalculationScenarios = Table(
+      ("id", "debits", "startDate", "endDate", "firstPaymentDate", "initialPayment", "duration", "totalPayable",  "totalInterestCharged",  "regularInstalmentAmount",  "finalInstalmentAmount"),
+      ("1.a.i.c", Seq(debit(2000.00, "2017-01-31")), date("2017-03-14"), date("2018-01-20"), date("2017-04-20"), 0, 10, 2032.74, 32.74, 200.00, 232.74),
+      ("1.a.ii.c", Seq(debit(2000.00, "2015-01-31")), date("2016-03-14"), date("2017-01-20"), date("2016-04-20"), 0, 10, 2095.61, 95.61, 200.00, 295.61),
+      ("1.b.ii.c", Seq(debit(2000.00, "2016-01-31")), date("2017-03-14"), date("2018-01-20"), date("2017-04-20"), 0, 10, 2090.39, 90.39, 200.00, 290.39),
+      ("1.d", Seq(debit(2000.00, "2017-01-31")), date("2017-03-14"), date("2018-01-20"), date("2017-04-20"), 1000, 10, 2019.54, 19.54, 100.00, 119.54),
+      ("1.e", Seq(debit(2000.00, "2017-01-31"), debit(1000.00, "2017-02-01")), date("2017-03-14"), date("2018-01-20"), date("2017-04-20"), 2000, 10, 3023.68, 23.68, 100.00, 123.68),
+      ("1.f", Seq(debit(2000.00, "2017-01-31"), debit(2000.00, "2017-02-01")), date("2017-03-14"), date("2018-01-20"), date("2017-04-20"), 2500, 10, 4032.85, 32.85, 150.00, 182.85),
+      ("2.a", Seq(debit(2000.00, "2017-03-31")), date("2017-03-14"), date("2018-01-20"), date("2017-04-20"), 0, 10, 2023.85, 23.85, 200.00, 223.85),
+      ("2.b", Seq(debit(2000.00, "2017-03-18")), date("2017-03-14"), date("2018-01-20"), date("2017-04-20"), 1000, 10, 2012.91, 12.91, 100.00, 112.91),
+      ("2.c", Seq(debit(2000.00, "2017-03-18"), debit(2000.00, "2017-03-19")), date("2017-03-14"), date("2018-01-20"), date("2017-04-20"), 2000, 10, 4026.11, 26.11, 200.00, 226.11),
+      ("2.d", Seq(debit(2000.00, "2017-03-18"), debit(2000.00, "2017-03-19")), date("2017-03-14"), date("2018-01-20"), date("2017-04-20"), 2500, 10, 4019.55, 19.55, 150.00, 169.55),
+      ("2.e", Seq(debit(2000.00, "2017-03-31")), date("2017-03-14"), date("2018-01-20"), date("2017-04-20"), 1000, 10, 2011.93, 11.93, 100.00, 111.93)
     )
 
-    forAll(table) { (id, debits, startDate, endDate, firstPaymentDate, initialPayment, repaymentCount, amountToPay, totalInterest, regularAmount, finalAmount) =>
-      s"calculate interest for scenario $id" in {
+    forAll(interestCalculationScenarios) { (id, debits, startDate, endDate, firstPaymentDate, initialPayment, duration, totalPayable, totalInterestCharged, regularInstalmentAmount, finalInstalmentAmount) =>
+      s"for $id calculate totalInterestCharged of $totalInterestCharged with totalPayable of $totalPayable, regularInstalmentAmount of $regularInstalmentAmount and finalInstalmentAmount of $finalInstalmentAmount" in {
         val rates = "23 Aug 2016,2.75\n29 Sep 2009,3.00"
         val rateData = Source.fromChars(rates.toCharArray)
         def mockIRService = MockInterestRateService(source = rateData)
@@ -75,67 +67,54 @@ class CalculationServiceSpec extends UnitSpec with OneAppPerSuite with MockitoSu
 
         Logger.info(s"Payment Schedule: Initial: ${schedule.initialPayment}, Over ${schedule.instalments.size}, Regular: ${schedule.instalments.head.amount}, Final: ${schedule.instalments.last.amount}, Total: $totalPaid")
 
-        totalPaid.doubleValue() shouldBe (amountToPay.doubleValue() +- tolerance)
-        schedule.totalInterestCharged.doubleValue() shouldBe (totalInterest.doubleValue() +- tolerance)
+        totalPaid.doubleValue() shouldBe totalPayable.doubleValue()
+        schedule.totalInterestCharged.doubleValue() shouldBe totalInterestCharged.doubleValue()
 
         val instalments = schedule.instalments
 
-        instalments.size shouldBe repaymentCount
-        instalments.head.amount shouldBe regularAmount
-        instalments.last.amount.doubleValue() shouldBe (finalAmount.doubleValue() +- tolerance)
+        instalments.size shouldBe duration
+        instalments.head.amount shouldBe regularInstalmentAmount
+        instalments.last.amount.doubleValue() shouldBe finalInstalmentAmount.doubleValue()
       }
     }
 
-    val realWorldData = Table(
-      ("debits", "startDate", "endDate", "initialPayment", "amountToPay", "instalmentBalance", "totalInterest", "totalPayable"),
-      (Seq(new debit(0.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 0.0, 0.0, 0.0, 0.0),
-      (Seq(new debit(1000.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 2.35, 1002.28),
-      (Seq(new debit(500.0, "2016-09-01", "2016-09-01"),
-        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 2.35, 1002.28),
-      (Seq(new debit(1000.0, "2019-08-01", "2019-08-01")), LocalDate.parse("2019-08-01"), LocalDate.parse("2020-06-30"), 0.0, 1000.0, 1000.0, 11.58, 1011.50),
-      (Seq(new debit(1000.0, "2016-01-01", "2016-01-01")), LocalDate.parse("2016-01-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 12.55, 1012.47),
-      (Seq(new debit(1000.0, "2016-08-01", "2016-08-04")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 5.33, 1005.09),
-      (Seq(new debit(1000.0, "2016-08-01", "2016-10-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 1000.0, 1000.0, 0.83, 1000.78),
-      (Seq(new debit(1000.0, "2016-08-01", "2016-10-01"),
-        new debit(500.0, "2016-09-01", "2016-09-01"),
-        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 2000.0, 2000.0, 3.18, 2003.06),
-      (Seq(new debit(1000.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1000.0, 0.0, 0.6, 1000.53),
-      (Seq(new debit(500.0, "2016-09-01", "2016-09-01"),
-        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1000.0, 0.0, 0.6, 1000.53),
-      (Seq(new debit(500.0, "2016-09-01", "2016-09-01"),
-        new debit(500.0, "2016-09-01", "2016-09-01"),
-        new debit(500.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 1000.0, 1500.0, 500.0, 2.08, 1501.67)
-
-    )
-    
-    forAll(realWorldData) { (debits, startDate, endDate, initialPayment, amountToPay, instalmentBalance, totalInterest, totalPayable) =>
-      s"calculate interest of $totalInterest for an input debt of $debits to be paid between $startDate and $endDate with an initial payment of $initialPayment" in {
-        val calculation = Calculation(debits, initialPayment, startDate, endDate, None, "MONTHLY")
-
-        val schedule = new CalculatorService(InterestRateServiceMock)(durationServiceMock).generateMultipleSchedules(calculation).head
-        schedule.amountToPay.doubleValue() shouldBe (amountToPay.doubleValue() +- tolerance)
-        schedule.initialPayment shouldBe initialPayment
-        schedule.instalmentBalance shouldBe instalmentBalance
-        schedule.totalInterestCharged.doubleValue() shouldBe (totalInterest.doubleValue() +- tolerance)
-        schedule.totalPayable shouldBe totalPayable
-      }
-    }
-
-    val instalmentCalcData = Table(
-      ("debits", "startDate", "endDate", "initialPayment", "months"),
-      (Seq(new debit(0.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 3),
-      (Seq(new debit(1000.0, "2016-09-01", "2016-09-01")), LocalDate.parse("2016-09-01"), LocalDate.parse("2016-11-30"), 0.0, 3)
+    val regularPaymentDateScenarios = Table(
+      ("id", "debits", "startDate", "endDate", "firstPaymentDate", "initialPayment", "duration"),
+      ("1.i", Seq(debit(2000.00, "2017-01-31")), date("2017-03-14"), date("2017-12-21"), date("2017-03-21"), 0, 10),
+      ("1.ii", Seq(debit(2000.00, "2015-01-31")), date("2015-03-14"), date("2015-12-21"), date("2015-03-21"), 0, 10),
+      ("1.iii", Seq(debit(2000.00, "2016-01-31")), date("2016-03-14"), date("2016-12-21"), date("2016-03-21"), 0, 10),
+      ("2.i", Seq(debit(2000.00, "2017-01-31")), date("2017-03-14"), date("2018-01-02"), date("2017-04-02"), 0, 10),
+      ("2.ii", Seq(debit(2000.00, "2015-01-31")), date("2016-03-14"), date("2017-01-02"), date("2016-04-02"), 0, 10),
+      ("2.iii", Seq(debit(2000.00, "2016-01-31")), date("2017-03-14"), date("2018-01-02"), date("2017-04-02"), 0, 10),
+      ("3.i", Seq(debit(2000.00, "2017-01-31")), date("2017-03-14"), date("2017-12-21"), date("2017-03-21"), 1000, 10),
+      ("3.ii", Seq(debit(2000.00, "2017-01-31"), debit(1000.00, "2017-02-01")), date("2017-03-14"), date("2018-01-21"), date("2017-04-21"), 2000, 10),
+      ("3.iii", Seq(debit(2000.00, "2017-01-31"), debit(2000.00, "2017-02-01")), date("2017-03-14"), date("2018-01-21"), date("2017-04-21"), 2500, 10),
+      ("4.i", Seq(debit(2000.00, "2017-01-31")), date("2017-03-14"), date("2018-01-02"), date("2017-04-02"), 1000, 10),
+      ("4.ii", Seq(debit(2000.00, "2017-01-31"), debit(1000.00, "2017-02-01")), date("2017-03-14"), date("2018-01-02"), date("2017-04-02"), 2000, 10),
+      ("4.iii", Seq(debit(2000.00, "2017-01-31"), debit(2000.00, "2017-02-01")), date("2017-03-14"), date("2018-01-02"), date("2017-04-02"), 2500, 10),
+      ("5.i", Seq(debit(2000.00, "2017-01-31")), date("2017-03-14"), date("2018-01-14"), date("2017-04-14"), 1000, 10),
+      ("6.i", Seq(debit(2000.00, "2017-01-31")), date("2017-03-14"), date("2018-01-02"), date("2017-04-02"), 1000, 10),
+      ("7.i", Seq(debit(2000.00, "2017-01-31")), date("2017-03-14"), date("2018-01-21"), date("2017-04-21"), 1000, 10)
     )
 
-    forAll(instalmentCalcData) { (debits, startDate, endDate, initialPayment, months) =>
-      s"generate an instalment plan of $months for a given debt $debits and period from $startDate to $endDate" in {
-        val calculation = Calculation(debits, initialPayment, startDate, endDate, None, "MONTHLY")
-        val schedule = new CalculatorService(InterestRateServiceMock)(durationServiceMock).generateMultipleSchedules(calculation).head
+    forAll(regularPaymentDateScenarios) { (id, debits, startDate, endDate, firstPaymentDate, initialPayment, duration) =>
+      s"for $id calculate a duration of $duration" in {
+        val rates = "23 Aug 2016,2.75\n29 Sep 2009,3.00"
+        val rateData = Source.fromChars(rates.toCharArray)
+        def mockIRService = MockInterestRateService(source = rateData)
+        def mockService = new CalculatorService(mockIRService)(durationServiceMock)
 
-        schedule.instalments.size shouldBe months
-        schedule.instalments.map {
-          _.amount
-        }.fold(BigDecimal(0)) { (a, it) => a + it }.doubleValue() shouldBe ((schedule.totalInterestCharged + schedule.instalmentBalance).doubleValue() +- tolerance)
+        val calculation = Calculation(debits, initialPayment, startDate, endDate, Some(firstPaymentDate), "MONTHLY")
+
+        val schedule: PaymentSchedule = mockService.generateMultipleSchedules(calculation).head
+
+        val amountPaid = schedule.instalments.map { _.amount }.sum
+
+        val totalPaid = amountPaid + schedule.initialPayment
+
+        Logger.info(s"Payment Schedule: Initial: ${schedule.initialPayment}, Over ${schedule.instalments.size}, Regular: ${schedule.instalments.head.amount}, Final: ${schedule.instalments.last.amount}, Total: $totalPaid")
+
+        schedule.instalments.size shouldBe duration
       }
     }
   }
