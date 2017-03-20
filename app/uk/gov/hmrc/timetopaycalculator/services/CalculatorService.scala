@@ -28,6 +28,10 @@ import scala.math.BigDecimal.RoundingMode.HALF_UP
 @Singleton
 class CalculatorService @Inject() (val interestService: InterestRateService) (val durationService: DurationService) {
 
+  val DebitDueAndCalculationDatesWithinRate = Tuple2(true, true)
+  val DebitDueDateWithinRate = Tuple2(true, false)
+  val CalculationDateWithinRate = Tuple2(false, true)
+
   implicit def orderingLocalDate: Ordering[LocalDate] = Ordering.fromLessThan(_ isBefore _)
 
   def generateMultipleSchedules(implicit calculation: Calculation):Seq[PaymentSchedule] =
@@ -122,8 +126,9 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
       }
     }
 
-    processDebits(calculation.initialPayment, sortedDebits)
-
+    val initPaymentInterest = processDebits(calculation.initialPayment, sortedDebits)
+    logger.info(s"InitialPayment Interest: $initPaymentInterest")
+    initPaymentInterest
   }
 
   /**
@@ -161,10 +166,6 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
       amountToPay - calculation.initialPayment, totalInterest, amountToPay + totalInterest,
       instalments.init :+ Instalment(instalments.last.paymentDate, instalments.last.amount + totalInterest, instalments.last.interest))
   }
-
-  val DebitDueAndCalculationDatesWithinRate = Tuple2(true, true)
-  val DebitDueDateWithinRate = Tuple2(true, false)
-  val CalculationDateWithinRate = Tuple2(false, true)
 
   /**
     * Get the historic interest rates that should be applied to a given debit and split the debit
