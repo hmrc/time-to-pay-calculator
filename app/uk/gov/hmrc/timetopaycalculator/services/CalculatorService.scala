@@ -125,7 +125,9 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
       }
     }
 
-    processDebits(calculation.initialPayment, sortedDebits)
+    val initPaymentInterest = processDebits(calculation.initialPayment, sortedDebits)
+    logger.info(s"InitialPayment Interest: $initPaymentInterest")
+    initPaymentInterest
   }
 
   /**
