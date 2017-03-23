@@ -3,6 +3,18 @@
 
 [![Build Status](https://travis-ci.org/hmrc/time-to-pay-calculator.svg?branch=master)](https://travis-ci.org/hmrc/time-to-pay-calculator) [ ![Download](https://api.bintray.com/packages/hmrc/releases/time-to-pay-calculator/images/download.svg) ](https://bintray.com/hmrc/releases/time-to-pay-calculator/_latestVersion)
 
+## About
+
+The Calculator service is used in the SSTTP project for Pay What You Owe Instalments. It applies interest calculation to the debits supplied in the request.
+The service is broken down into different sections; calculating historic interest, initial payment interest and future instalment interest.
+It also generates a list of repayment dates and the amount that will be paid for each instalment.
+
+<a href="https://github.com/hmrc/time-to-pay-calculator">
+    <p align="center">
+        <img src="https://raw.githubusercontent.com/hmrc/time-to-pay-calculator/master/public/calculator.png" alt="CalculatorOverview">
+    </p>
+</a>
+
 ## Endpoint URLs
 
 POST `/time-to-pay-calculator/paymentschedule`
@@ -10,6 +22,7 @@ POST `/time-to-pay-calculator/paymentschedule`
 ## Service Definitions
 
 All requests use the HTTP `POST` method
+Default port is 8886
 
 ### Single Payment Schedule Calculator (external facing API - `/paymentschedule`)
 
@@ -109,8 +122,8 @@ Sample successful output response:
     "initialPayment": 0,
     "amountToPay": 5000,
     "instalmentBalance": 5000,
-    "totalInterestCharged": 511.29,
-    "totalPayable": 5511.29,
+    "totalInterestCharged": 6.28,
+    "totalPayable": 5006.28,
     "instalments": [
       {
         "paymentDate": "2017-01-04",
@@ -120,12 +133,12 @@ Sample successful output response:
       {
         "paymentDate": "2017-02-04",
         "amount": 1666.67,
-        "interest": 3.89
+        "interest": 1.381281301369863013698630136986301
       },
       {
         "paymentDate": "2017-03-04",
-        "amount": 2177.96,
-        "interest": 7.4
+        "amount": 1672.95,
+        "interest": 4.897270068493150684931506849315069
       }
     ]
   }
