@@ -24,9 +24,9 @@ object InterestRate {
 }
 
 case class InterestRate(startDate: LocalDate, endDate: Option[LocalDate], rate: BigDecimal) {
-  def dailyRate = rate / yearLength
+  def dailyRate: BigDecimal = rate / yearLength
 
-  def yearLength = {
+  def yearLength: BigDecimal = {
     val yrs = Range.inclusive(startDate.getYear, endDate.map(_.getYear).getOrElse(startDate.getYear))
 
     BigDecimal(yrs.map { yr =>
@@ -34,7 +34,5 @@ case class InterestRate(startDate: LocalDate, endDate: Option[LocalDate], rate: 
     }.sum) / BigDecimal(yrs.size)
   }
 
-  def containsDate(date: LocalDate): Boolean = {
-    date.compareTo(startDate) >= 0 && (date.compareTo(endDate.getOrElse(MAX)) <= 0)
-  }
+  def containsDate(date: LocalDate): Boolean = date.compareTo(startDate) >= 0 && (date.compareTo(endDate.getOrElse(MAX)) <= 0)
 }

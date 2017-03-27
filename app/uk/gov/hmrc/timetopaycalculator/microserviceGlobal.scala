@@ -17,7 +17,6 @@
 package uk.gov.hmrc.timetopaycalculator
 
 import javax.inject.{Inject, Singleton}
-
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import play.api.{Application, Configuration}
@@ -44,18 +43,17 @@ object AuthParamsControllerConfiguration extends AuthParamsControllerConfig {
 
 object MicroserviceAuditFilter extends AuditFilter with AppName with MicroserviceFilterSupport{
   override val auditConnector = MicroserviceAuditConnector
-  override def controllerNeedsAuditing(controllerName: String) =  ControllerConfigurationObject.controllerConfigsCLass.paramsForController(controllerName).needsAuditing
-
+  override def controllerNeedsAuditing(controllerName: String) = ControllerConfigurationObject.controllerConfigsCLass.paramsForController(controllerName).needsAuditing
 }
 
 object MicroserviceLoggingFilter extends LoggingFilter with MicroserviceFilterSupport {
-  override def controllerNeedsLogging(controllerName: String) =  ControllerConfigurationObject.controllerConfigsCLass.paramsForController(controllerName).needsLogging
+  override def controllerNeedsLogging(controllerName: String) = ControllerConfigurationObject.controllerConfigsCLass.paramsForController(controllerName).needsLogging
 }
 
 object MicroserviceAuthFilter extends AuthorisationFilter with MicroserviceFilterSupport {
   override lazy val authParamsConfig = AuthParamsControllerConfiguration
   override lazy val authConnector = MicroserviceAuthConnector
-  override def controllerNeedsAuth(controllerName: String): Boolean =  ControllerConfigurationObject.controllerConfigsCLass.paramsForController(controllerName).needsAuth
+  override def controllerNeedsAuth(controllerName: String): Boolean = ControllerConfigurationObject.controllerConfigsCLass.paramsForController(controllerName).needsAuth
 }
 
 object MicroserviceGlobal extends DefaultMicroserviceGlobal with RunMode with MicroserviceFilterSupport {

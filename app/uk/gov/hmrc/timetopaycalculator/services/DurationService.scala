@@ -21,19 +21,20 @@ import java.time.temporal.ChronoUnit
 import java.time.temporal.ChronoUnit._
 import javax.inject.Singleton
 
-
 @Singleton
 class DurationService {
   def getDaysBetween(startDate: LocalDate, endDate: LocalDate, inclusive: Boolean = true): Long = calculatePeriod(startDate, endDate, DAYS, inclusive)
 
   def getRepaymentDates(startDate: LocalDate, endDate: LocalDate): Seq[LocalDate] = {
-    if(startDate.isAfter(endDate)) {
-      throw new IllegalArgumentException("Start date must be BEFORE end date")
-    }
+    if(startDate.isAfter(endDate)) throw new IllegalArgumentException("Start date must be BEFORE end date")
 
     Iterator.iterate(startDate)(_ plusMonths 1).takeWhile(_.compareTo(endDate) <= 0).toSeq
   }
 
+  /**
+    * When calculating the number of dates between two dates, uses the inclusive flag to determine if it is single
+    * inclusive (include one of the to days) or not inclusive (exclude both days).
+    */
   private def calculatePeriod(startDate: LocalDate, endDate: LocalDate, frequency: ChronoUnit, inclusive: Boolean): Long = {
     frequency.between(startDate, endDate) + (if (inclusive) 0 else -1) match {
       case c if c > 0 => c

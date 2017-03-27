@@ -17,12 +17,12 @@
 package uk.gov.hmrc.timetopaycalculator
 
 import java.time.LocalDate
-
 import play.api.data.validation.ValidationError
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads.min
 import play.api.libs.json._
 import scala.language.implicitConversions
+
 package object models {
   implicit val localDateFormat = new Format[LocalDate] {
     override def reads(json: JsValue): JsResult[LocalDate] =
