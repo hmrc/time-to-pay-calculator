@@ -20,10 +20,8 @@ import java.io.FileNotFoundException
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Singleton
-
 import play.api.Logger
 import uk.gov.hmrc.timetopaycalculator.models.InterestRate
-
 import scala.io.Source
 
 @Singleton

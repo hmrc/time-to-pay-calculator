@@ -18,13 +18,20 @@ package uk.gov.hmrc.timetopaycalculator.services
 
 import java.time.{LocalDate, Year}
 import javax.inject.{Inject, Singleton}
-
 import play.api.Configuration
 import play.api.Logger._
 import uk.gov.hmrc.timetopaycalculator.models._
-
 import scala.math.BigDecimal.RoundingMode.HALF_UP
 
+/**
+  * When calculating interest, the calculation is split up into three sections:
+  * 1. Historic Interest - Interest due on debits in the past up to but not including the start date.
+  * 2. Initial Payment Interest - Interest due on debits over the next 7 days, when an initial payment is
+  * made. This takes into account that the initial payment is matched against the oldest debits first
+  * 3. Instalment amounts and interest - The amount paid in each instalment as well as the interest
+  * generated on liable debits up to the final payment. This is from the start date of the calculation
+  * or start date + 7 days if an initial payment was made.
+  */
 @Singleton
 class CalculatorService @Inject() (val interestService: InterestRateService) (val durationService: DurationService) {
 
@@ -34,35 +41,28 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
 
   implicit def orderingLocalDate: Ordering[LocalDate] = Ordering.fromLessThan(_ isBefore _)
 
-  def generateMultipleSchedules(implicit calculation: Calculation):Seq[PaymentSchedule] =
+  def generateMultipleSchedules(implicit calculation: Calculation): Seq[PaymentSchedule] =
     Seq(buildSchedule).map { s => logger.info(s"Payment Schedule: $s"); s }
 
   /**
     * Calculate instalments including interest charged on each instalment, while taking into account
     * interest is not charged on debits where initial payment fully or partially clears the oldest debits or
-    * if the debit is not liable for interest (due in the future after the end date)
-    *
-    * @param calculation
-    * @return
+    * if the debit is not liable for interest (due in the future after the end date).
     */
   def calculateStagedPayments(implicit calculation: Calculation): Seq[Instalment] = {
-    //get the dates of each instalment payment
+    // Get the dates of each instalment payment
     val repayments = durationService.getRepaymentDates(calculation.getFirstPaymentDate, calculation.endDate)
     val numberOfPayments = BigDecimal(repayments.size)
 
     val instalments = calculation.debits.sortBy(_.dueDate).flatMap { debit =>
-      //check if initial payment has been cleared - if not, then date to calculate interest from is a week later
+      // Check if initial payment has been cleared - if not, then date to calculate interest from is a week later
       val calculateFrom = if(calculation.initialPaymentRemaining > 0)
-        calculation.startDate.plusWeeks(1)
-      else
-        calculation.startDate
+        calculation.startDate.plusWeeks(1) else calculation.startDate
 
       val calculationDate = if (calculateFrom.isBefore(debit.dueDate))
-        debit.dueDate
-      else
-        calculateFrom
+        debit.dueDate else calculateFrom
 
-      //subtract the initial payment amount from the debts, beginning with the oldest
+      // Subtract the initial payment amount from the debts, beginning with the oldest
       val principal = calculation.applyInitialPaymentToDebt(debit.amount)
 
       val monthlyCapitalRepayment = (principal / numberOfPayments).setScale(2, HALF_UP)
@@ -81,18 +81,16 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
       }
     }
 
-    // combine instalments that are on the same day
+    // Combine instalments that are on the same day
     repayments.map { x =>
       instalments.filter(_.paymentDate.isEqual(x)).reduce( (z, y) => Instalment(z.paymentDate, z.amount + y.amount, z.interest + y.interest))
     }
   }
 
   /**
-    * Calculate interest for the initial payment amount for the first 7 days until it (the initial payment) is taken out of the taxpayer's account
+    * Calculate interest for the initial payment amount for the first 7 days until the initial payment is taken out of the taxpayer's account.
     *
     * @param debits - only debits that are not after calculation date plus a week
-    * @param calculation
-    * @return
     */
   def calculateInitialPaymentInterest(debits: Seq[Debit])(implicit calculation: Calculation): BigDecimal = {
     val currentInterestRate = interestService.rateOn(calculation.startDate).getOrElse(InterestRate.NONE).rate
@@ -117,7 +115,7 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
         durationService.getDaysBetween(debit.dueDate, calculation.startDate.plusWeeks(1))
     }
 
-    //return - amount (used in the calculation), remaining downPayment
+    // Return - amount (used in the calculation), remaining downPayment
     def calculateAmount(amount: BigDecimal, debit: Debit): (BigDecimal, BigDecimal) = {
       if(amount > debit.amount) {
         (debit.amount, amount - debit.amount)
@@ -134,30 +132,27 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
   /**
     * Build a PaymentSchedule, calculated in parts - historic interest (in the past up to start date),
     * initial payment interest, future interest (start date going forward) and instalments (monthly payments).
-    *
-    * @param calculation
-    * @return
     */
   def buildSchedule(implicit calculation: Calculation): PaymentSchedule = {
-    // set interest dates on the debits per year
+    // Builds a seq of seq debits, where each sub seq of debits is built from the different interest rate boundaries a debit crosses
     val overallDebits = calculation.debits.filter(_.dueDate.isBefore(calculation.startDate)).map {
       processDebit
     }
 
-    // calculate interest on old debts that have incurred interest up to the point of the current calculation date (now)
+    // Calculate interest on old debits that have incurred interest up to the point of the current calculation date (today)
     val totalHistoricInterest = (for {
       debit <- overallDebits.map(_.filterNot(_.dueDate.isAfter(calculation.startDate)))
     } yield calculateHistoricInterest(debit)).sum
 
-    // calculate interest for the first 7 days until the initial payment is actually taken out of the taxpayer's account
+    // Calculate interest for the first 7 days until the initial payment is actually taken out of the taxpayer's account
     val initialPaymentInterest = if(calculation.initialPayment > 0)
       calculateInitialPaymentInterest(calculation.debits.filter(_.dueDate.isBefore(calculation.startDate.plusWeeks(1))))
     else BigDecimal(0)
 
-    // calculate the schedule of regular payments on the all debits due before endDate
+    // Calculate the schedule of regular payments on the all debits due before endDate
     val instalments = calculateStagedPayments
 
-    // total amount of debt without interest
+    // Total amount of debt without interest
     val amountToPay = calculation.debits.map(_.amount).sum
 
     val totalInterest = (instalments.map(_.interest).sum + totalHistoricInterest + initialPaymentInterest).setScale(2, HALF_UP)
@@ -169,11 +164,8 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
 
   /**
     * Get the historic interest rates that should be applied to a given debit and split the debit
-    * into multiple debits, covering each interest rate
-    * @param calculation
-    * @return
+    * into multiple debits, covering each interest rate.
     */
-
   private def processDebit(implicit calculation: Calculation): (Debit) => Seq[Debit] = { debit =>
     interestService.getRatesForPeriod(debit.dueDate, calculation.endDate).map { rate =>
       (rate.containsDate(debit.dueDate), rate.containsDate(calculation.endDate)) match {
@@ -188,6 +180,11 @@ class CalculatorService @Inject() (val interestService: InterestRateService) (va
   def historicRateEndDate(debitEndDate: LocalDate)(implicit calculation: Calculation): LocalDate =
     if(debitEndDate.getYear.equals(calculation.startDate.getYear)) calculation.startDate else debitEndDate
 
+  /**
+    * Calculate the amount of historic interest on liable debits, taking into account whether
+    * the number of days between two dates is inclusive (count one of the dates) or double
+    * inclusive (count both days).
+    */
   private def calculateHistoricInterest(debits: Seq[Debit])(implicit calculation: Calculation): BigDecimal = {
     debits.map { debit =>
       val debitRateEndDate = debit.rate.getOrElse(InterestRate.NONE).endDate.get

@@ -18,7 +18,6 @@ package uk.gov.hmrc.timetopaycalculator.controllers
 
 import javax.inject.{Inject, Singleton}
 
-import akka.stream.Materializer
 import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.play.microservice.controller.BaseController
@@ -29,7 +28,6 @@ import scala.concurrent.Future
 
 @Singleton
 class PaymentCalculationController @Inject() (val calculatorService: CalculatorService) extends BaseController {
-
 
   def generate() = Action.async(parse.json) { implicit request =>
     withJsonBody[Calculation] { calculation =>

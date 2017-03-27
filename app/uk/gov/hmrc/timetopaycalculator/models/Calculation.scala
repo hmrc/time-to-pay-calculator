@@ -27,9 +27,7 @@ case class Calculation(debits: Seq[Debit],
 
   var initialPaymentRemaining: BigDecimal = initialPayment
 
-  def getFirstPaymentDate: LocalDate = {
-    firstPaymentDate.getOrElse(startDate)
-  }
+  def getFirstPaymentDate: LocalDate = firstPaymentDate.getOrElse(startDate)
 
   def applyInitialPaymentToDebt(debtAmount: BigDecimal): BigDecimal = debtAmount match {
     case amt if amt <= initialPaymentRemaining => initialPaymentRemaining = initialPaymentRemaining - debtAmount; 0
