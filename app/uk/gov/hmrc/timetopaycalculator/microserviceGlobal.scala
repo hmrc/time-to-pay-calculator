@@ -34,26 +34,26 @@ class ControllerConfiguration @Inject()(configuration:Configuration) extends Con
 }
 
 object ControllerConfigurationObject {
-lazy val controllerConfigsCLass = new ControllerConfiguration(Configuration.load(play.Environment.simple().underlying()))
+lazy val controllerConfigsClass = new ControllerConfiguration(Configuration.load(play.Environment.simple().underlying()))
 }
 
 object AuthParamsControllerConfiguration extends AuthParamsControllerConfig {
-  lazy val controllerConfigs = ControllerConfigurationObject.controllerConfigsCLass.controllerConfigs
+  lazy val controllerConfigs = ControllerConfigurationObject.controllerConfigsClass.controllerConfigs
 }
 
 object MicroserviceAuditFilter extends AuditFilter with AppName with MicroserviceFilterSupport{
   override val auditConnector = MicroserviceAuditConnector
-  override def controllerNeedsAuditing(controllerName: String) = ControllerConfigurationObject.controllerConfigsCLass.paramsForController(controllerName).needsAuditing
+  override def controllerNeedsAuditing(controllerName: String) = ControllerConfigurationObject.controllerConfigsClass.paramsForController(controllerName).needsAuditing
 }
 
 object MicroserviceLoggingFilter extends LoggingFilter with MicroserviceFilterSupport {
-  override def controllerNeedsLogging(controllerName: String) = ControllerConfigurationObject.controllerConfigsCLass.paramsForController(controllerName).needsLogging
+  override def controllerNeedsLogging(controllerName: String) = ControllerConfigurationObject.controllerConfigsClass.paramsForController(controllerName).needsLogging
 }
 
 object MicroserviceAuthFilter extends AuthorisationFilter with MicroserviceFilterSupport {
   override lazy val authParamsConfig = AuthParamsControllerConfiguration
   override lazy val authConnector = MicroserviceAuthConnector
-  override def controllerNeedsAuth(controllerName: String): Boolean = ControllerConfigurationObject.controllerConfigsCLass.paramsForController(controllerName).needsAuth
+  override def controllerNeedsAuth(controllerName: String): Boolean = ControllerConfigurationObject.controllerConfigsClass.paramsForController(controllerName).needsAuth
 }
 
 object MicroserviceGlobal extends DefaultMicroserviceGlobal with RunMode with MicroserviceFilterSupport {

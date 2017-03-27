@@ -32,8 +32,8 @@ class DurationService {
   }
 
   /**
-    * When calculating the number of dates between two dates, uses the inclusive flag to determine if it is single
-    * inclusive (include one of the to days) or not inclusive (exclude both days).
+    * Calculates the number of days between two dates which uses the inclusive flag to determine if it is single
+    * inclusive (includes the end date) or not inclusive (excludes both start and end date).
     */
   private def calculatePeriod(startDate: LocalDate, endDate: LocalDate, frequency: ChronoUnit, inclusive: Boolean): Long = {
     frequency.between(startDate, endDate) + (if (inclusive) 0 else -1) match {
