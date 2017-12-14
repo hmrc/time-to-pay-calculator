@@ -51,8 +51,8 @@ class InterestRateServiceSpec extends UnitSpec  with OneAppPerSuite{
       }
     }
 
-    "contain 17 entries with the default rate file" in {
-      InterestRateService.rates.size shouldBe 17
+    "contain 18 entries with the default rate file" in {
+      InterestRateService.rates.size shouldBe 18
     }
 
     val dateChecks = Table(
