@@ -10,7 +10,7 @@ object MicroServiceBuild extends Build with MicroService {
 private object AppDependencies {
   import play.sbt.PlayImport._
 
-  private val scalaTestVersion = "2.2.6"
+  private val scalaTestVersion = "3.0.5"
   private val pegdownVersion = "1.6.0"
 
   val compile = Seq(

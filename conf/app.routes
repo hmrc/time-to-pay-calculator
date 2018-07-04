@@ -1,4 +1,4 @@
 # microservice specific routes
 
 POST    /paymentschedule                 @uk.gov.hmrc.timetopaycalculator.controllers.PaymentCalculationController.generate
-GET    /enddate/*debts                 @uk.gov.hmrc.timetopaycalculator.controllers.EndDateController.apply(debts, saDue: Option[String])
+GET     /enddate/*debts                  @uk.gov.hmrc.timetopaycalculator.controllers.EndDateController.apply(debts, saDue: Option[String])

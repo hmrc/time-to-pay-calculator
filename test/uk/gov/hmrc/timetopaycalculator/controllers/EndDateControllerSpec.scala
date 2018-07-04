@@ -16,22 +16,21 @@
 
 package uk.gov.hmrc.timetopaycalculator.controllers
 
-import javax.inject.{Inject, Singleton}
-
-import play.api.libs.json._
-import play.api.mvc._
-import uk.gov.hmrc.play.microservice.controller.BaseController
-import uk.gov.hmrc.timetopaycalculator.models._
-import uk.gov.hmrc.timetopaycalculator.services.CalculatorService
+import play.api.mvc.Result
+import play.api.test.FakeRequest
+import play.mvc.Http.Status.OK
 
 import scala.concurrent.Future
+class EndDateControllerSpec extends Spec {
 
-@Singleton
-class PaymentCalculationController @Inject() (val calculatorService: CalculatorService) extends BaseController {
+  val endDateController = new EndDateController
 
-  def generate() = Action.async(parse.json) { implicit request =>
-    withJsonBody[Calculation] { calculation =>
-      Future.successful(Ok(Json.toJson(calculatorService.generateMultipleSchedules(calculation))))
+  "endDateController" should {
+
+    "endDateController allow a valid request" in {
+
+      val response: Future[Result] = endDateController.apply("10000@2017-01-01/15000@2018-02-01")(FakeRequest("GET", "/enddate/10000@2017-01-01/15000@2018-02-01"))
+      status(response) shouldBe OK
     }
   }
 }

@@ -16,22 +16,29 @@
 
 package uk.gov.hmrc.timetopaycalculator.controllers
 
-import javax.inject.{Inject, Singleton}
+import org.mockito.Mockito.when
+import org.scalatest._
+import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
+import org.scalatest.mockito.MockitoSugar
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.test.UnitSpec
 
-import play.api.libs.json._
-import play.api.mvc._
-import uk.gov.hmrc.play.microservice.controller.BaseController
-import uk.gov.hmrc.timetopaycalculator.models._
-import uk.gov.hmrc.timetopaycalculator.services.CalculatorService
+import scala.concurrent.{ExecutionContext, Future}
 
-import scala.concurrent.Future
+trait Spec extends Matchers
+  with DiagrammedAssertions
+  with TryValues
+  with EitherValues
+  with OptionValues
+  with AppendedClues
+  with ScalaFutures
+  with StreamlinedXml
+  with Inside
+  with Eventually
+  with MockitoSugar
+  with UnitSpec
+  with IntegrationPatience
+ {
+  implicit lazy val ec = scala.concurrent.ExecutionContext.Implicits.global
 
-@Singleton
-class PaymentCalculationController @Inject() (val calculatorService: CalculatorService) extends BaseController {
-
-  def generate() = Action.async(parse.json) { implicit request =>
-    withJsonBody[Calculation] { calculation =>
-      Future.successful(Ok(Json.toJson(calculatorService.generateMultipleSchedules(calculation))))
-    }
-  }
 }
