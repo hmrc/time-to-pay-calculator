@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,14 +33,14 @@ import uk.gov.hmrc.timetopaycalculator.EndDate
   * }}}
   */
 class EndDateController extends Controller {
-
+  //todo invesigate why we never used this is the frontend ???????
   /**
     * @param debtStrings A '/' separated list of AMOUNT@DUEDATE values
     * @param saDueDateString The due date for the next Self Assessment
     *    return. If supplied this will cause 'rule B' to be applied in
     *    addition to 'rule A'
     */
-  def apply(debtStrings: String, saDueDateString: Option[String]) = Action {
+  def apply(debtStrings: String, saDueDateString: Option[String] = None) = Action {
     val saDueDate = saDueDateString.filter(_.nonEmpty).map(Day.parse(_))
     val debts = debtStrings.split("/").map{_.split("@").toList}.map {
       case h :: t => (Day.parse(t.mkString), BigDecimal(h))

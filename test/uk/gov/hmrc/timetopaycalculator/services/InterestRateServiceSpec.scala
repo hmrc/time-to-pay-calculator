@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,11 @@ import java.time.LocalDate._
 import java.time.format.DateTimeParseException
 
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import org.scalatestplus.play.OneAppPerSuite
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.timetopaycalculator.controllers.Spec
 
 import scala.io.Source
 
-class InterestRateServiceSpec extends UnitSpec  with OneAppPerSuite{
+class InterestRateServiceSpec extends Spec{
   val InterestRateService = new InterestRateService
   case class IRS(override val filename: String) extends InterestRateService {
     override val source = Source.fromInputStream(getClass.getResourceAsStream(filename))

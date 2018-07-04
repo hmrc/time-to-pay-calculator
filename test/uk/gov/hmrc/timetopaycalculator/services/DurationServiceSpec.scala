@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,9 @@ package uk.gov.hmrc.timetopaycalculator.services
 import java.time.LocalDate
 
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import org.scalatestplus.play.OneAppPerSuite
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.timetopaycalculator.controllers.Spec
 
-class DurationServiceSpec extends UnitSpec  with OneAppPerSuite{
+class DurationServiceSpec extends Spec{
   "The DurationService" should {
     val service = new DurationService
 

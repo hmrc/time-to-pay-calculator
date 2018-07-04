@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.timetopaycalculator.models.PaymentSchedule
 import uk.gov.hmrc.timetopaycalculator.services.CalculatorService
 
-class PaymentCalculationControllerSpec @Inject() (implicit val materializer: Materializer) extends UnitSpec with MockitoSugar with OneAppPerSuite {
+class PaymentCalculationControllerSpec @Inject() (implicit val materializer: Materializer) extends Spec {
   val mockCalculatorService: CalculatorService = mock[CalculatorService]
   val paymentCalculationController = new PaymentCalculationController(mockCalculatorService)
 
