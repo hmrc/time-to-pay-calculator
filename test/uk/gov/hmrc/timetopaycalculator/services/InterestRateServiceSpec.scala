@@ -51,7 +51,7 @@ class InterestRateServiceSpec extends Spec{
     }
 
     "contain 17 entries with the default rate file" in {
-      InterestRateService.rates.size shouldBe 17
+      InterestRateService.rates.size shouldBe 19
     }
 
     val dateChecks = Table(
