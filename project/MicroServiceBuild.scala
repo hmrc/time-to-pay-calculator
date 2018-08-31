@@ -15,9 +15,9 @@ private object AppDependencies {
 
   val compile = Seq(
     ws,
-    "uk.gov.hmrc" %% "microservice-bootstrap" %  "6.18.0",
+    "uk.gov.hmrc" %% "microservice-bootstrap" %  "8.1.0",
     "uk.gov.hmrc" %% "play-url-binders" %  "2.1.0",
-    "uk.gov.hmrc" %% "domain" %  "4.1.0"
+    "uk.gov.hmrc" %% "domain" %  "5.2.0"
   )
 
   trait TestDependencies {
@@ -30,7 +30,7 @@ private object AppDependencies {
       override lazy val test = Seq(
         "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
-        "uk.gov.hmrc" %% "hmrctest" %  "2.3.0",
+        "uk.gov.hmrc" %% "hmrctest" %  "3.0.0",
         "com.github.tomakehurst" % "wiremock" % "1.58" % scope,
         "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope,
         "org.mockito" % "mockito-core" % "2.7.0" % scope
@@ -46,7 +46,7 @@ private object AppDependencies {
       override lazy val test = Seq(
         "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
-        "uk.gov.hmrc" %% "hmrctest" %  "2.3.0",
+        "uk.gov.hmrc" %% "hmrctest" %  "3.0.0",
         "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % scope,
         "org.mockito" % "mockito-core" % "2.7.0" % scope
       )
