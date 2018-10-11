@@ -17,7 +17,7 @@ private object AppDependencies {
   val compile = Seq(
     ws,
     "uk.gov.hmrc" %% "microservice-bootstrap" %  "8.3.0",
-    "uk.gov.hmrc" %% "play-url-binders" %  "2.1.0",
+    "uk.gov.hmrc" %% "play-ui" % "7.21.0",
     "uk.gov.hmrc" %% "domain" %  "5.2.0"
   )
 
