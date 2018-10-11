@@ -1,3 +1,4 @@
+
 import sbt._
 
 object MicroServiceBuild extends Build with MicroService {
@@ -15,7 +16,7 @@ private object AppDependencies {
 
   val compile = Seq(
     ws,
-    "uk.gov.hmrc" %% "microservice-bootstrap" %  "8.1.0",
+    "uk.gov.hmrc" %% "microservice-bootstrap" %  "8.3.0",
     "uk.gov.hmrc" %% "play-url-binders" %  "2.1.0",
     "uk.gov.hmrc" %% "domain" %  "5.2.0"
   )
@@ -26,7 +27,7 @@ private object AppDependencies {
   }
 
   object Test {
-    def apply() = new TestDependencies {
+    def apply(): Seq[ModuleID] = new TestDependencies {
       override lazy val test = Seq(
         "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
@@ -39,7 +40,7 @@ private object AppDependencies {
   }
 
   object IntegrationTest {
-    def apply() = new TestDependencies {
+    def apply(): Seq[ModuleID] = new TestDependencies {
 
       override lazy val scope: String = "it"
 
@@ -53,6 +54,6 @@ private object AppDependencies {
     }.test
   }
 
-  def apply() = compile ++ Test() ++ IntegrationTest()
+  def apply(): Seq[ModuleID] = compile ++ Test() ++ IntegrationTest()
 }
 
