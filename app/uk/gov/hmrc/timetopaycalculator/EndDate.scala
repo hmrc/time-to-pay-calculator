@@ -25,8 +25,7 @@ import java.time.{LocalDate => Day}
   * before it (for example if the maximum end date is the 26th of July
   * and the payments are to be made on the 12th of each month then the
   * last actual payment would be on the 12th on July). 
-  * 
-  * @see [[https://confluence.tools.tax.service.gov.uk/pages/viewpage.action?pageId=76500139]]
+  *
   */
 object EndDate {
 
