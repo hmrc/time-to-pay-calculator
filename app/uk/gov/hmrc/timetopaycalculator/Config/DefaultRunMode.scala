@@ -14,23 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.timetopaycalculator.controllers
+package uk.gov.hmrc.timetopaycalculator.Config
+import play.api.Mode.Mode
+import play.api.{Configuration, Play}
+import uk.gov.hmrc.play.config.{AppName, RunMode}
 
-import play.api.mvc.Result
-import play.api.test.FakeRequest
-import play.mvc.Http.Status.OK
 
-import scala.concurrent.Future
-class EndDateControllerSpec extends Spec {
+trait DefaultRunMode extends RunMode {
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
+  override protected def mode: Mode = Play.current.mode
+}
 
-  val endDateController = new EndDateController
-
-  "endDateController" should {
-
-    "endDateController allow a valid request" in {
-
-      val response: Future[Result] = endDateController.apply("10000@2017-01-01/15000@2018-02-01")(FakeRequest("GET", "/enddate/10000@2017-01-01/15000@2018-02-01"))
-      status(response) shouldBe OK
-    }
-  }
+trait DefaultAppName extends AppName {
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
 }
