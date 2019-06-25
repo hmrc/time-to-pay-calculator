@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
 import uk.gov.hmrc.timetopaycalculator.models._
 import uk.gov.hmrc.timetopaycalculator.services.CalculatorService
 
