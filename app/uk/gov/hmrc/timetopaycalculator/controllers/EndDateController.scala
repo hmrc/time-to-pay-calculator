@@ -18,7 +18,6 @@ package uk.gov.hmrc.timetopaycalculator.controllers
 
 import java.time.{LocalDate => Day}
 import play.api.mvc._
-import uk.gov.hmrc.play.microservice.controller.BaseController
 import uk.gov.hmrc.timetopaycalculator.EndDate
 
 /**
