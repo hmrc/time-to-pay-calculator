@@ -21,65 +21,62 @@ import java.time.LocalDate._
 import java.time.format.DateTimeParseException
 
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import uk.gov.hmrc.timetopaycalculator.controllers.Spec
+import support.ITSpec
 
 import scala.io.Source
 
-class InterestRateServiceSpec extends Spec{
+class InterestRateServiceSpec extends ITSpec {
   val InterestRateService = new InterestRateService
+  val exceptionProducingFiles = Table(
+    ("file", "type"),
+    ("/nullPointer-interestRates.csv", classOf[IndexOutOfBoundsException]),
+    ("/dateError-interestRates.csv", classOf[DateTimeParseException]),
+    ("/decimalError-interestRates.csv", classOf[NumberFormatException]))
+  val dateChecks = Table(
+    ("date", "rate"),
+    (LocalDate.parse("2016-11-01"), 2.75),
+    (LocalDate.parse("2016-04-01"), 3.0),
+    (LocalDate.parse("2016-08-04"), 3.0),
+    (LocalDate.parse("2016-08-05"), 3.0),
+    (LocalDate.parse("2016-08-03"), 3.0),
+    (LocalDate.parse("1975-01-01"), null)
+  )
+
+  forAll(exceptionProducingFiles) { (name, exType) =>
+    val service = IRS(name)
+
+    s"The InterestRateService: Throw a $exType for an input filename $name" in {
+      try {
+        service rateOn now
+      } catch {
+        case ex: Throwable => ex.getClass shouldBe exType
+      }
+    }
+  }
+
+  "The InterestRateService: contain 17 entries with the default rate file" in {
+    InterestRateService.rates.size shouldBe 19
+  }
+  val dateRanges = Table(
+    ("startDate", "endDate", "periods"),
+    (LocalDate.parse("2016-04-01"), LocalDate.parse("2016-04-01"), 1),
+    (LocalDate.parse("2016-04-01"), LocalDate.parse("2016-10-01"), 2),
+    (LocalDate.parse("2016-11-30"), LocalDate.parse("2017-01-01"), 2))
+
+  forAll(dateChecks) { (date, rate) =>
+    s"return a rate of $rate for $date" in {
+      InterestRateService.rateOn(date).map(_.rate).orNull shouldBe rate
+    }
+  }
+
   case class IRS(override val filename: String) extends InterestRateService {
     override val source = Source.fromInputStream(getClass.getResourceAsStream(filename))
   }
 
-  "The InterestRateService" should {
-    val exceptionProducingFiles = Table(
-      ("file", "type"),
-      ("/nullPointer-interestRates.csv", classOf[IndexOutOfBoundsException]),
-      ("/dateError-interestRates.csv", classOf[DateTimeParseException]),
-      ("/decimalError-interestRates.csv", classOf[NumberFormatException]))
-
-    forAll(exceptionProducingFiles) { (name, exType) =>
-      val service = IRS(name)
-
-      s"Throw a $exType for an input filename $name" in {
-        try {
-          service rateOn now
-        } catch {
-          case ex: Throwable => ex.getClass shouldBe exType
-        }
-      }
-    }
-
-    "contain 17 entries with the default rate file" in {
-      InterestRateService.rates.size shouldBe 19
-    }
-
-    val dateChecks = Table(
-      ("date", "rate"),
-      (LocalDate.parse("2016-11-01"), 2.75),
-      (LocalDate.parse("2016-04-01"), 3.0),
-      (LocalDate.parse("2016-08-04"), 3.0),
-      (LocalDate.parse("2016-08-05"), 3.0),
-      (LocalDate.parse("2016-08-03"), 3.0),
-      (LocalDate.parse("1975-01-01"), null)
-    )
-
-    forAll(dateChecks) { (date, rate) =>
-      s"return a rate of $rate for $date" in {
-        InterestRateService.rateOn(date).map(_.rate).orNull shouldBe rate
-      }
-    }
-
-    val dateRanges = Table(
-      ("startDate",                   "endDate",                      "periods"),
-      (LocalDate.parse("2016-04-01"), LocalDate.parse("2016-04-01"),  1),
-      (LocalDate.parse("2016-04-01"), LocalDate.parse("2016-10-01"),  2),
-      (LocalDate.parse("2016-11-30"), LocalDate.parse("2017-01-01"),  2))
-
-    forAll(dateRanges) { (startDate, endDate, periods) =>
-      s"return $periods between $startDate and $endDate" in {
-        InterestRateService.getRatesForPeriod(startDate, endDate).size shouldBe periods
-      }
+  forAll(dateRanges) { (startDate, endDate, periods) =>
+    s"The InterestRateService: return $periods between $startDate and $endDate" in {
+      InterestRateService.getRatesForPeriod(startDate, endDate).size shouldBe periods
     }
   }
+
 }

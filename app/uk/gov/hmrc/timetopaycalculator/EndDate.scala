@@ -19,44 +19,53 @@ package uk.gov.hmrc.timetopaycalculator
 import java.time.{LocalDate => Day}
 
 /**
-  * Calculates the maximum permissible end date for a repayment
-  * period. Within this window of time a monthly schedule will be
-  * calculated. The actual end date will be either on this date, or
-  * before it (for example if the maximum end date is the 26th of July
-  * and the payments are to be made on the 12th of each month then the
-  * last actual payment would be on the 12th on July). 
-  *
-  */
+ * Calculates the maximum permissible end date for a repayment
+ * period. Within this window of time a monthly schedule will be
+ * calculated. The actual end date will be either on this date, or
+ * before it (for example if the maximum end date is the 26th of July
+ * and the payments are to be made on the 12th of each month then the
+ * last actual payment would be on the 12th on July).
+ *
+ */
 object EndDate {
 
   type Liability = (Day, BigDecimal)
 
   /**
-    * End of the calendar month before the due date of the next
-    * liability which is outside of the TTP. Not currently
-    * implemented. 
-    */
+   * End of the calendar month before the due date of the next
+   * liability which is outside of the TTP. Not currently
+   * implemented.
+   */
   def ruleA(
-    otherLiability: Iterable[Liability]
+      otherLiability: Iterable[Liability]
   ): Day = ???
 
   /**
-    * End of the calendar month before the due date of the next
-    * non-submitted SA return
-    */
-  def ruleB(
-    saDueDate: Day
-  ): Day = endPrevMonth(saDueDate)
+   * Returns the earliest date from the applicable rules.
+   *
+   * @param saDueDate      Day the next Self Assessment return is due
+   *   on. If supplied this will cause Rule B to be applied.
+   * @param ttpDebts       Amounts owed via TTP and the days the debts are
+   *                       due.
+   * @param otherLiability Intended for Rule A, not currently used.
+   */
+  def apply(
+      saDueDate:      Option[Day],
+      ttpDebts:       Iterable[Liability],
+      otherLiability: Iterable[Liability] = Nil
+  ): Day = List(
+    //    ruleA(otherLiability),
+    saDueDate.map(ruleB),
+    Some(ruleC(ttpDebts))
+  ).flatten.min
 
   /**
-    * 12 months from the earliest due date of the amounts included in
-    * the TTP, ignoring due dates for any amounts under £32
-    */
-  def ruleC(
-    ttpDebts: Iterable[Liability]
-  ): Day = ttpDebts.collect{
-    case (due, amt) if amt >= 32 => due
-  }.min.plusYears(1)
+   * End of the calendar month before the due date of the next
+   * non-submitted SA return
+   */
+  def ruleB(
+      saDueDate: Day
+  ): Day = endPrevMonth(saDueDate)
 
   implicit def dayOrder: Ordering[Day] = Ordering.fromLessThan(_ isBefore _)
 
@@ -66,40 +75,36 @@ object EndDate {
   }
 
   /**
-    * Returns the earliest date from the applicable rules. 
-    * 
-    * @param saDueDate Day the next Self Assessment return is due
-    *   on. If supplied this will cause Rule B to be applied. 
-    * @param ttpDebts Amounts owed via TTP and the days the debts are
-    *   due.
-    * @param otherLiability Intended for Rule A, not currently used.
-    */
-  def apply(
-    saDueDate: Option[Day],
-    ttpDebts: Iterable[Liability],
-    otherLiability: Iterable[Liability] = Nil
-  ): Day = List(
-//    ruleA(otherLiability),
-    saDueDate.map(ruleB),
-    Some(ruleC(ttpDebts))
-  ).flatten.min
+   * 12 months from the earliest due date of the amounts included in
+   * the TTP, ignoring due dates for any amounts under £32
+   */
+  def ruleC(
+      ttpDebts: Iterable[Liability]
+  ): Day = ttpDebts.collect {
+    case (due, amt) if amt >= 32 => due
+  }.min.plusYears(1)
 
   /**
-    * Provides a stream of LocalDate's on a fixed day of the
-    * month, clipping to the last day of the month if necessary. 
-    * 
-    * {{{
-    * val endOfJan = LocalDate.parse("2016-01-31")
-    * val dates = EndDate.monthlyIntervals(endOfJan)
-    * dates: Stream(2016-01-31, 2016-02-29, 2016-03-31, ...)
-    * }}}
-    */
+   * Provides a stream of LocalDate's on a fixed day of the
+   * month, clipping to the last day of the month if necessary.
+   *
+   * {{{
+   * val endOfJan = LocalDate.parse("2016-01-31")
+   * val dates = EndDate.monthlyIntervals(endOfJan)
+   * dates: Stream(2016-01-31, 2016-02-29, 2016-03-31, ...)
+   * }}}
+   */
+
   def monthlyIntervals(start: Day = Day.now): Stream[Day] = {
     import Math.min
-    def inner(v: Day): Stream[Day] = v #:: inner {
-      val i = v.plusMonths(1)
-      i.plusDays{min(start.getDayOfMonth, i.lengthOfMonth) - i.getDayOfMonth}
-    }
+
+      def inner(v: Day): Stream[Day] = v #:: inner {
+        val i = v.plusMonths(1)
+        i.plusDays {
+          min(start.getDayOfMonth, i.lengthOfMonth) - i.getDayOfMonth
+        }
+      }
+
     inner(start)
   }
 

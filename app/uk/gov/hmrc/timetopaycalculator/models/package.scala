@@ -17,26 +17,27 @@
 package uk.gov.hmrc.timetopaycalculator
 
 import java.time.LocalDate
-import play.api.data.validation.ValidationError
+
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads.min
 import play.api.libs.json._
+
 import scala.language.implicitConversions
 
 package object models {
-  implicit val localDateFormat = new Format[LocalDate] {
+  implicit val localDateFormat: Format[LocalDate] = new Format[LocalDate] {
     override def reads(json: JsValue): JsResult[LocalDate] =
       json.validate[String].map(LocalDate.parse)
 
     override def writes(o: LocalDate): JsValue = Json.toJson(o.toString)
   }
 
-  implicit val formatInterestRate = Json.format[InterestRate]
-  implicit val formatInterest = Json.format[Interest]
-  implicit val formatDebit = Json.format[Debit]
+  implicit val formatInterestRate: OFormat[InterestRate] = Json.format[InterestRate]
+  implicit val formatInterest: OFormat[Interest] = Json.format[Interest]
+  implicit val formatDebit: OFormat[Debit] = Json.format[Debit]
 
   def minSeqLength[T](length: Int)(implicit anySeqReads: Reads[Seq[T]]) = Reads[Seq[T]] { js =>
-    anySeqReads.reads(js).filter(JsError(ValidationError("error.minLength", length)))(_.size >= length)
+    anySeqReads.reads(js).filter(JsError(JsonValidationError("error.minLength", length)))(_.size >= length)
   }
 
   implicit val calculationReads: Reads[Calculation] = (
@@ -48,6 +49,6 @@ package object models {
     (JsPath \ "paymentFrequency").read[String]
   ) (Calculation.apply _)
 
-  implicit val formatInstalment = Json.format[Instalment]
-  implicit val formatPaymentSchedule = Json.format[PaymentSchedule]
+  implicit val formatInstalment: OFormat[Instalment] = Json.format[Instalment]
+  implicit val formatPaymentSchedule: OFormat[PaymentSchedule] = Json.format[PaymentSchedule]
 }

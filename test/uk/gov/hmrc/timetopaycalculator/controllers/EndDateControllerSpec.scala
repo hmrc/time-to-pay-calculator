@@ -16,21 +16,15 @@
 
 package uk.gov.hmrc.timetopaycalculator.controllers
 
-import play.api.mvc.Result
-import play.api.test.FakeRequest
 import play.mvc.Http.Status.OK
+import support.{ITSpec, TestConnector}
 
-import scala.concurrent.Future
-class EndDateControllerSpec extends Spec {
+class EndDateControllerSpec extends ITSpec {
 
-  val endDateController = new EndDateController
+  val connector = fakeApplication().injector.instanceOf[TestConnector]
 
-  "endDateController" should {
-
-    "endDateController allow a valid request" in {
-
-      val response: Future[Result] = endDateController.apply("10000@2017-01-01/15000@2018-02-01")(FakeRequest("GET", "/enddate/10000@2017-01-01/15000@2018-02-01"))
-      status(response) shouldBe OK
-    }
+  "endDateController endDateController allow a valid request" in {
+    val response = connector.enddate("enddate/10000@2017-01-01/15000@2018-02-01").futureValue
+    response.status shouldBe OK
   }
 }

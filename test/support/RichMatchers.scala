@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.timetopaycalculator.controllers
+package support
 
-import org.mockito.Mockito.when
+import com.github.tomakehurst.wiremock.verification.LoggedRequest
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
-import org.scalatest.mockito.MockitoSugar
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.UnitSpec
+import play.api.libs.json.{JsValue, Json}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.language.implicitConversions
 
-trait Spec extends Matchers
+trait RichMatchers
+  extends Matchers
   with DiagrammedAssertions
   with TryValues
   with EitherValues
@@ -35,10 +34,10 @@ trait Spec extends Matchers
   with StreamlinedXml
   with Inside
   with Eventually
-  with MockitoSugar
-  with UnitSpec
-  with IntegrationPatience
- {
-  implicit lazy val ec = scala.concurrent.ExecutionContext.Implicits.global
+  with IntegrationPatience {
+
+  implicit def toLoggedRequestOps(lr: LoggedRequest) = new {
+    def getBodyAsJson: JsValue = Json.parse(lr.getBodyAsString)
+  }
 
 }

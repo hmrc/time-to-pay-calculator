@@ -20,7 +20,9 @@ import java.time.LocalDate
 import java.time.LocalDate.{MAX, MIN}
 
 object InterestRate {
+
   object NONE extends InterestRate(MIN, None, BigDecimal(0))
+
 }
 
 case class InterestRate(startDate: LocalDate, endDate: Option[LocalDate], rate: BigDecimal) {
