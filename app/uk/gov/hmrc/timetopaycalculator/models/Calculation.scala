@@ -18,10 +18,10 @@ package uk.gov.hmrc.timetopaycalculator.models
 
 import java.time.LocalDate
 
-case class Calculation(debits: Seq[Debit],
-                       initialPayment: BigDecimal,
-                       startDate: LocalDate,
-                       endDate: LocalDate,
+case class Calculation(debits:           Seq[Debit],
+                       initialPayment:   BigDecimal,
+                       startDate:        LocalDate,
+                       endDate:          LocalDate,
                        firstPaymentDate: Option[LocalDate] = None,
                        paymentFrequency: String) {
 
@@ -30,7 +30,8 @@ case class Calculation(debits: Seq[Debit],
   def getFirstPaymentDate: LocalDate = firstPaymentDate.getOrElse(startDate)
 
   def applyInitialPaymentToDebt(debtAmount: BigDecimal): BigDecimal = debtAmount match {
-    case amt if amt <= initialPaymentRemaining => initialPaymentRemaining = initialPaymentRemaining - debtAmount; 0
+    case amt if amt <= initialPaymentRemaining =>
+      initialPaymentRemaining = initialPaymentRemaining - debtAmount; 0
     case amt => val remainingDebt = amt - initialPaymentRemaining; initialPaymentRemaining = 0; remainingDebt
   }
 }

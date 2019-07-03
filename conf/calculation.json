@@ -1,12 +1,12 @@
 {
   "interestRate": 3.5,
   "numberOfMonths": 2,
-  "amountOwed" : 3070.22,
+  "amountOwed": 3070.22,
   "numberOfDays": 122,
   "liabilities": [
     {
-      "originCode" : "IN1",
-      "dueDate" : "2016-01-31",
+      "originCode": "IN1",
+      "dueDate": "2016-01-31",
       "amount": 2175.66,
       "taxYear": 2015
     }

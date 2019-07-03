@@ -17,17 +17,16 @@
 package uk.gov.hmrc.timetopaycalculator.controllers
 
 import javax.inject.{Inject, Singleton}
-
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.timetopaycalculator.models._
 import uk.gov.hmrc.timetopaycalculator.services.CalculatorService
 
 import scala.concurrent.Future
 
 @Singleton
-class PaymentCalculationController @Inject() (val calculatorService: CalculatorService) extends BaseController {
+class PaymentCalculationController @Inject() (val calculatorService: CalculatorService, cc: ControllerComponents) extends BackendController(cc) {
 
   def generate() = Action.async(parse.json) { implicit request =>
     withJsonBody[Calculation] { calculation =>

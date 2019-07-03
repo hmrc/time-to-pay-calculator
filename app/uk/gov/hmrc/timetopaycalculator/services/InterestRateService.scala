@@ -19,19 +19,20 @@ package uk.gov.hmrc.timetopaycalculator.services
 import java.io.FileNotFoundException
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+
 import javax.inject.Singleton
 import play.api.Logger
 import uk.gov.hmrc.timetopaycalculator.models.InterestRate
+
 import scala.io.Source
 
 @Singleton
 class InterestRateService {
+
+  lazy val rates: Seq[InterestRate] = streamInterestRates()
   val filename: String = "/interestRates.csv"
   val source: Source = Source.fromInputStream(getClass.getResourceAsStream(filename))
   val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
-
-  lazy val rates: Seq[InterestRate] = streamInterestRates()
-
   private val interestRateConsumer = { (rates: Seq[InterestRate], line: String) =>
     line.split(",").toSeq match {
       case Seq(date, rate) =>
@@ -46,7 +47,7 @@ class InterestRateService {
       source.getLines().foldLeft(Seq[InterestRate]())(interestRateConsumer)
     } catch {
       case e: NullPointerException => throw new FileNotFoundException(s"$source")
-      case t: Throwable => throw t
+      case t: Throwable            => throw t
     }
   }
 
@@ -55,6 +56,7 @@ class InterestRateService {
   }
 
   implicit def orderingLocalDate: Ordering[LocalDate] = Ordering.fromLessThan(_ isBefore _)
+
   implicit def orderingInterestRate: Ordering[InterestRate] = Ordering.by(_.startDate)
 
   def getRatesForPeriod(startDate: LocalDate, endDate: LocalDate): Seq[InterestRate] = {
