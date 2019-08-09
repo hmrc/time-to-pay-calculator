@@ -13,7 +13,7 @@ It also generates a list of repayment dates and the amount that will be paid for
     <p align="center">
         <img src="https://raw.githubusercontent.com/hmrc/time-to-pay-calculator/master/public/calculator.png" alt="CalculatorOverview">
     </p>
-</a>
+</a> 
 
 ## Endpoint URLs
 
