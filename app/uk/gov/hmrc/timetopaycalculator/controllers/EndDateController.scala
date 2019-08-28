@@ -36,7 +36,6 @@ import uk.gov.hmrc.timetopaycalculator.EndDate
  */
 @Singleton
 class EndDateController @Inject() (cc: ControllerComponents) extends BackendController(cc) {
-  //todo invesigate why we never used this is the frontend ???????
   /**
    * @param debtStrings     A '/' separated list of AMOUNT@DUEDATE values
    * @param saDueDateString The due date for the next Self Assessment
