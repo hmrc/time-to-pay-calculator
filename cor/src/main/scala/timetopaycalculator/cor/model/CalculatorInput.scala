@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.timetopaycalculator.models
+package timetopaycalculator.cor.model
 
 import java.time.LocalDate
 
-case class Calculation(debits:           Seq[Debit],
-                       initialPayment:   BigDecimal,
-                       startDate:        LocalDate,
-                       endDate:          LocalDate,
-                       firstPaymentDate: Option[LocalDate] = None,
-                       paymentFrequency: String) {
+import play.api.libs.json.{Json, JsonValidationError, OFormat, OWrites}
+
+case class CalculatorInput(
+    debits:           Seq[DebitInput],
+    initialPayment:   BigDecimal,
+    startDate:        LocalDate,
+    endDate:          LocalDate,
+    firstPaymentDate: Option[LocalDate] = None
+) {
 
   var initialPaymentRemaining: BigDecimal = initialPayment
 
@@ -34,4 +37,16 @@ case class Calculation(debits:           Seq[Debit],
       initialPaymentRemaining = initialPaymentRemaining - debtAmount; 0
     case amt => val remainingDebt = amt - initialPaymentRemaining; initialPaymentRemaining = 0; remainingDebt
   }
+}
+
+object CalculatorInput {
+
+  private val reads = Json.reads[CalculatorInput]
+    .filter(JsonValidationError("'debits' was empty, it should have at least one debit."))(_.debits.size > 0)
+    .filter(JsonValidationError("The 'initialPayment' can't be less than 0"))(_.initialPayment >= 0)
+
+  private val writes: OWrites[CalculatorInput] = Json.writes[CalculatorInput]
+
+  implicit val format: OFormat[CalculatorInput] = OFormat(reads, writes)
+
 }

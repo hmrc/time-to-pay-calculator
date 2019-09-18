@@ -1,7 +1,4 @@
-
 # time-to-pay-calculator
-
-[![Build Status](https://travis-ci.org/hmrc/time-to-pay-calculator.svg?branch=master)](https://travis-ci.org/hmrc/time-to-pay-calculator) [ ![Download](https://api.bintray.com/packages/hmrc/releases/time-to-pay-calculator/images/download.svg) ](https://bintray.com/hmrc/releases/time-to-pay-calculator/_latestVersion)
 
 ## About
 
@@ -15,29 +12,7 @@ It also generates a list of repayment dates and the amount that will be paid for
     </p>
 </a> 
 
-## Endpoint URLs
 
-POST `/time-to-pay-calculator/paymentschedule`
-
-## Service Definitions
-
-All requests use the HTTP `POST` method
-Default port is 8886
-
-### Single Payment Schedule Calculator (external facing API - `/paymentschedule`)
-
-#### Functionality
-
-Return a payment schedule for a bounded period (next 'event' date)
-
-* Given:
-    * A collection of `debit` items (type, amount, interest already accrued, interest calculated to date)
-    * A `start date` for the arrangement (default to today)
-    * An `end date` for the arrangement (default to start date + 11 months)
-    * An `initial payment` amount affordable
-
-* Invoke the `Payment Schedule Calculator` (below) with an end date set to `months` in the future
-* Collate results in a PaymentSchedule element and return
 
 #### Input structure
 Calculator input model:
@@ -49,16 +24,13 @@ Calculator input model:
 | startDate                                            | LocalDate       | The start date of the TTP arrangement                                  |
 | endDate                                              | LocalDate       | The end date of the TTP arrangement                                    |
 | firstPaymentDate                                     | Option[LocalDate]       | The date on which the first payment will be taken                      |
-| paymentFrequency            [DAILY\|WEEKLY\|MONTHLY] | String          | The frequency of the instalment payments                               |
 
 
 Debit input model:
 
 | Parameter               | Type       | Description                                                             |
 |:-----------------------:|:----------:|:-----------------------------------------------------------------------:|
-| originCode              | Option[String]     | The originCode of the debt                                              |
 | amount                  | BigDecimal | The amount owed for that debt                                           |
-| interest                | Option[Interest]   | An interest object                                                      |
 | dueDate     | LocalDate  | The due date of the debt, used to calculate which debt to pay off first |
 
 Interest model:
@@ -68,28 +40,6 @@ Interest model:
 | amountAccrued           | BigDecimal | How much interest has been accumulated to date                          |
 | calculationDate         | LocalDate  | At what date was the interest last calculated up to                     |
 
-Sample input request:
-```
-{
-   "debits":[
-      {
-         "originCode":"IN1",
-         "amount":5000,
-         "dueDate":"2017-01-25",
-         "interest":{
-            "calculationDate":"2017-01-25",
-            "amountAccrued":500
-         },
-         "taxYearEnd":"2017-04-05"
-      }
-   ],
-   "initialPayment":0,
-   "startDate":"2017-01-04",
-   "endDate":"2017-03-04",
-   "firstPaymentDate":"2017-01-04",
-   "paymentFrequency":"MONTHLY"
-}
-```
 
 #### Output structure
 Payment schedule output model:
@@ -113,37 +63,6 @@ Instalment (inner class) output model:
 | amount 	        | BigDecimal 	| The amount to pay for that instalment 	|
 | interest 	        | BigDecimal 	| The amount of interest for that instalment 	|
 
-Sample successful output response:
-````
-[
-  {
-    "startDate": "2017-01-04",
-    "endDate": "2017-03-04",
-    "initialPayment": 0,
-    "amountToPay": 5000,
-    "instalmentBalance": 5000,
-    "totalInterestCharged": 6.28,
-    "totalPayable": 5006.28,
-    "instalments": [
-      {
-        "paymentDate": "2017-01-04",
-        "amount": 1666.67,
-        "interest": 0
-      },
-      {
-        "paymentDate": "2017-02-04",
-        "amount": 1666.67,
-        "interest": 1.381281301369863013698630136986301
-      },
-      {
-        "paymentDate": "2017-03-04",
-        "amount": 1672.95,
-        "interest": 4.897270068493150684931506849315069
-      }
-    ]
-  }
-]
-````
 
 ### Payment Schedule Calculator definition (internal - for information only)
 

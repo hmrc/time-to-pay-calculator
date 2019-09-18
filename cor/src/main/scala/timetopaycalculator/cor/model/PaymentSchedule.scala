@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.timetopaycalculator.models
+package timetopaycalculator.cor.model
 
 import java.time.LocalDate
 
-case class PaymentSchedule(startDate:            LocalDate,
-                           endDate:              LocalDate,
-                           initialPayment:       BigDecimal,
-                           amountToPay:          BigDecimal,
-                           instalmentBalance:    BigDecimal,
-                           totalInterestCharged: BigDecimal,
-                           totalPayable:         BigDecimal,
-                           instalments:          Seq[Instalment]) {
+import play.api.libs.json.{Json, OFormat}
+
+final case class PaymentSchedule(
+    startDate:            LocalDate,
+    endDate:              LocalDate,
+    initialPayment:       BigDecimal,
+    amountToPay:          BigDecimal,
+    instalmentBalance:    BigDecimal,
+    totalInterestCharged: BigDecimal,
+    totalPayable:         BigDecimal,
+    instalments:          Seq[Instalment]
+) {
+
   override def toString: String =
     s"""
        |\tStart Date:         $startDate
@@ -44,13 +49,12 @@ case class PaymentSchedule(startDate:            LocalDate,
      """.stripMargin
 
   def instalmentsToString: String = {
-    instalments.map(_.toString).reduce { (acc, instalment) =>
+    instalments.map(_.toString).foldLeft("") { (acc, instalment) =>
       s"""$acc\n\t\t$instalment"""
     }
   }
 }
 
-case class Instalment(paymentDate: LocalDate, amount: BigDecimal, interest: BigDecimal) {
-  override def toString: String =
-    s"""$paymentDate: $amount ($interest)"""
+object PaymentSchedule {
+  implicit val foramt: OFormat[PaymentSchedule] = Json.format[PaymentSchedule]
 }

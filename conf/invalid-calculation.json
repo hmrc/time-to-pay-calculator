@@ -30,6 +30,5 @@
   },
   "initialPaymentDate": "2017-01-31",
   "startDate": "2017-01-31",
-  "endDate": "2017-01-31",
-  "paymentFrequency": "1TYF"
+  "endDate": "2017-01-31"
 }

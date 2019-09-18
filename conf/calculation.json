@@ -15,6 +15,5 @@
   "initialPaymentDate": "2017-01-31",
   "whenDue": "2017-12-31",
   "startDate": "2017-01-31",
-  "endDate": "2017-04-31",
-  "paymentFrequency": "1M"
+  "endDate": "2017-04-31"
 }

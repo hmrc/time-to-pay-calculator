@@ -16,49 +16,77 @@
 
 package uk.gov.hmrc.timetopaycalculator.controllers
 
-import org.scalatest.prop.TableDrivenPropertyChecks._
-import play.api.Logger
-import play.api.libs.json.Json
-import play.mvc.Http.Status._
-import support.{ITSpec, TestConnector}
-import uk.gov.hmrc.timetopaycalculator.models.PaymentSchedule
+import java.time.LocalDate
+
+import support.ITSpec
+import timetopaycalculator.cor.model.{CalculatorInput, DebitInput, Instalment, PaymentSchedule}
+import timetopaytaxpayer.cor.CalculatorConnector
+import uk.gov.hmrc.http.HeaderCarrier
+
+object TdAll {
+
+  val calculatorInput = CalculatorInput(
+    debits           = List(
+      DebitInput(
+        500,
+        "2019-06-07"
+      ),
+      DebitInput(
+        700,
+        "2019-09-13"
+      )
+    ),
+    initialPayment   = 123.11,
+    startDate        = "2019-01-31",
+    endDate          = "2020-02-18",
+    firstPaymentDate = "2019-02-18"
+  )
+
+  implicit def toSome[T](t: T): Option[T] = Some(t)
+
+  implicit def toLocalDate(t: String): LocalDate = LocalDate.parse(t)
+
+  implicit def toSomeLocalDate(t: String): Option[LocalDate] = Some(LocalDate.parse(t))
+
+  implicit def toBigDecimal(s: String): BigDecimal = BigDecimal(s)
+}
 
 class PaymentCalculationControllerSpec extends ITSpec {
 
-  val connector = fakeApplication().injector.instanceOf[TestConnector]
+  import TdAll._
 
-  forAll(Data.unhappyData) { (input, fieldName, errorName) =>
-    s"The payment controller should verify the unhappy path: input: $fieldName = $errorName" in {
-      val response = connector.paymentscheduleWithHeader(Json.parse(input)).failed.futureValue
-      response.getMessage should include("returned 400")
-    }
-  }
+  "compute calculation" in {
 
-  forAll(Data.goodStatusData) { (input, statusCode) =>
-    s"The payment controller should vary the status according to the input validity: input $input = $statusCode" in {
-      val response = connector.paymentschedule(Json.parse(input)).futureValue
-      response.status shouldBe statusCode
-    }
-  }
+    val connector = app.injector.instanceOf[CalculatorConnector]
 
-  forAll(Data.badStatusData) { (input, statusCode) =>
-    s"The payment controller should fail according to the input validity: input $input = $statusCode" in {
-      val response = connector.paymentschedule(Json.parse(input)).failed.futureValue
-      response.getMessage should include("returned 400")
-    }
-  }
+    implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  "the payment controller should vary the payment schedule according to the input" in {
-    val input =
-      """{ "initialPayment" : 0.0, "startDate" : "2016-09-01", "endDate" : "2016-11-30",
-               "paymentFrequency" : "MONTHLY", "debits": [{"originCode": "PAO1", "amount": 1000.00,
-                "interest" : { "amountAccrued": 0.0, "calculationDate" : "2016-09-01"},
-                "dueDate" : "2016-09-01"}]}"""
+    val result = connector.calculatePaymentschedule(TdAll.calculatorInput).futureValue
 
-    val response = connector.paymentschedule(Json.parse(input)).futureValue
-    val schedule = Json.parse(response.body).as[Seq[PaymentSchedule]]
-
-    schedule.head.totalPayable.doubleValue() shouldBe (1002.27 +- 0.1)
+    result shouldBe PaymentSchedule(
+      startDate            = "2019-01-31",
+      endDate              = "2020-02-18",
+      initialPayment       = "123.11",
+      amountToPay          = 1200,
+      instalmentBalance    = "1076.89",
+      totalInterestCharged = "5.48",
+      totalPayable         = "1205.48",
+      instalments          = List(
+        Instalment("2019-02-18", "82.84", "0"),
+        Instalment("2019-03-18", "82.84", "0"),
+        Instalment("2019-04-18", "82.84", "0"),
+        Instalment("2019-05-18", "82.84", "0"),
+        Instalment("2019-06-18", "82.84", "0.03097561643835616438356164383561644"),
+        Instalment("2019-07-18", "82.84", "0.1084146575342465753424657534246575"),
+        Instalment("2019-08-18", "82.84", "0.188435"),
+        Instalment("2019-09-18", "82.84", "0.2972245205479452054794520547945206"),
+        Instalment("2019-10-18", "82.84", "0.5185094520547945205479452054794521"),
+        Instalment("2019-11-18", "82.84", "0.7471705479452054794520547945205479"),
+        Instalment("2019-12-18", "82.84", "0.9684554794520547945205479452054796"),
+        Instalment("2020-01-18", "82.84", "1.197116575342465753424657534246575"),
+        Instalment("2020-02-18", "88.32", "1.425777671232876712328767123287671")
+      )
+    )
   }
 
 }

@@ -31,15 +31,15 @@ class InterestRateServiceSpec extends ITSpec {
     ("file", "type"),
     ("/nullPointer-interestRates.csv", classOf[IndexOutOfBoundsException]),
     ("/dateError-interestRates.csv", classOf[DateTimeParseException]),
-    ("/decimalError-interestRates.csv", classOf[NumberFormatException]))
+    ("/decimalError-interestRates.csv", classOf[NumberFormatException])
+  )
   val dateChecks = Table(
     ("date", "rate"),
     (LocalDate.parse("2016-11-01"), 2.75),
     (LocalDate.parse("2016-04-01"), 3.0),
     (LocalDate.parse("2016-08-04"), 3.0),
     (LocalDate.parse("2016-08-05"), 3.0),
-    (LocalDate.parse("2016-08-03"), 3.0),
-    (LocalDate.parse("1975-01-01"), null)
+    (LocalDate.parse("2016-08-03"), 3.0)
   )
 
   forAll(exceptionProducingFiles) { (name, exType) =>
@@ -54,6 +54,16 @@ class InterestRateServiceSpec extends ITSpec {
     }
   }
 
+  "Old dates are not supported" in {
+    val thrown = intercept[RuntimeException] {
+      InterestRateService.rateOn(LocalDate.parse("1990-01-01"))
+    }
+
+    thrown.getMessage should startWith (
+      "It should not happen. This date is to old. There is no rate defined for it. [date:1990-01-01]"
+    )
+  }
+
   "The InterestRateService: contain 17 entries with the default rate file" in {
     InterestRateService.rates.size shouldBe 19
   }
@@ -61,11 +71,12 @@ class InterestRateServiceSpec extends ITSpec {
     ("startDate", "endDate", "periods"),
     (LocalDate.parse("2016-04-01"), LocalDate.parse("2016-04-01"), 1),
     (LocalDate.parse("2016-04-01"), LocalDate.parse("2016-10-01"), 2),
-    (LocalDate.parse("2016-11-30"), LocalDate.parse("2017-01-01"), 2))
+    (LocalDate.parse("2016-11-30"), LocalDate.parse("2017-01-01"), 2)
+  )
 
   forAll(dateChecks) { (date, rate) =>
     s"return a rate of $rate for $date" in {
-      InterestRateService.rateOn(date).map(_.rate).orNull shouldBe rate
+      InterestRateService.rateOn(date).rate shouldBe rate
     }
   }
 

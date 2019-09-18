@@ -19,6 +19,7 @@ package uk.gov.hmrc.timetopaycalculator.controllers
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
 import play.api.mvc._
+import timetopaycalculator.cor.model.{CalculatorInput, PaymentSchedule}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.timetopaycalculator.models._
 import uk.gov.hmrc.timetopaycalculator.services.CalculatorService
@@ -29,8 +30,9 @@ import scala.concurrent.Future
 class PaymentCalculationController @Inject() (val calculatorService: CalculatorService, cc: ControllerComponents) extends BackendController(cc) {
 
   def generate() = Action.async(parse.json) { implicit request =>
-    withJsonBody[Calculation] { calculation =>
-      Future.successful(Ok(Json.toJson(calculatorService.generateMultipleSchedules(calculation))))
+    withJsonBody[CalculatorInput] { calculation =>
+      val schedule: PaymentSchedule = calculatorService.generateMultipleSchedules(calculation)
+      Future.successful(Ok(Json.toJson(schedule)))
     }
   }
 }
