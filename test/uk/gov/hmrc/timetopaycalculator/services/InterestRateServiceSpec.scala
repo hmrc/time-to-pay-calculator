@@ -38,8 +38,7 @@ class InterestRateServiceSpec extends ITSpec {
     (LocalDate.parse("2016-04-01"), 3.0),
     (LocalDate.parse("2016-08-04"), 3.0),
     (LocalDate.parse("2016-08-05"), 3.0),
-    (LocalDate.parse("2016-08-03"), 3.0),
-    (LocalDate.parse("1975-01-01"), null)
+    (LocalDate.parse("2016-08-03"), 3.0)
   )
 
   forAll(exceptionProducingFiles) { (name, exType) =>
@@ -54,6 +53,16 @@ class InterestRateServiceSpec extends ITSpec {
     }
   }
 
+  "Old dates are not supported" in {
+    val thrown = intercept[RuntimeException] {
+      InterestRateService.rateOn(LocalDate.parse("1990-01-01"))
+    }
+
+    thrown.getMessage should startWith (
+      "It should not happen. This date is to old. There is no rate defined for it. [date:1990-01-01]"
+    )
+  }
+
   "The InterestRateService: contain 17 entries with the default rate file" in {
     InterestRateService.rates.size shouldBe 19
   }
@@ -65,7 +74,7 @@ class InterestRateServiceSpec extends ITSpec {
 
   forAll(dateChecks) { (date, rate) =>
     s"return a rate of $rate for $date" in {
-      InterestRateService.rateOn(date).map(_.rate).orNull shouldBe rate
+      InterestRateService.rateOn(date).rate shouldBe rate
     }
   }
 

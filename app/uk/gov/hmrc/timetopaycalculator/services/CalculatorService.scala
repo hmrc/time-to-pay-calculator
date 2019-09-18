@@ -43,16 +43,16 @@ class CalculatorService @Inject() (val interestService: InterestRateService, con
 
   implicit def orderingLocalDate: Ordering[LocalDate] = Ordering.fromLessThan(_ isBefore _)
 
-  def generateMultipleSchedules(implicit calculation: Calculation): Seq[PaymentSchedule] =
+  def generateMultipleSchedules(implicit calculation: CalculatorInput): Seq[PaymentSchedule] =
     Seq(buildSchedule).map { s => logger.info(s"Payment Schedule: $s"); s }
 
   /**
    * Build a PaymentSchedule, calculated in parts - historic interest (in the past up to start date),
    * initial payment interest, future interest (start date going forward) and instalments (monthly payments).
    */
-  def buildSchedule(implicit calculation: Calculation): PaymentSchedule = {
+  def buildSchedule(implicit calculation: CalculatorInput): PaymentSchedule = {
     // Builds a seq of seq debits, where each sub seq of debits is built from the different interest rate boundaries a debit crosses
-    val overallDebits = calculation.debits.filter(_.dueDate.isBefore(calculation.startDate)).map {
+    val overallDebits: Seq[Seq[Debit]] = calculation.debits.filter(_.dueDate.isBefore(calculation.startDate)).map {
       processDebit
     }
 
@@ -84,7 +84,7 @@ class CalculatorService @Inject() (val interestService: InterestRateService, con
    * interest is not charged on debits where initial payment fully or partially clears the oldest debits or
    * if the debit is not liable for interest (due in the future after the end date).
    */
-  def calculateStagedPayments(implicit calculation: Calculation): Seq[Instalment] = {
+  def calculateStagedPayments(implicit calculation: CalculatorInput): Seq[Instalment] = {
     // Get the dates of each instalment payment
     val repayments = durationService.getRepaymentDates(calculation.getFirstPaymentDate, calculation.endDate)
     val numberOfPayments = BigDecimal(repayments.size)
@@ -102,7 +102,7 @@ class CalculatorService @Inject() (val interestService: InterestRateService, con
 
       val monthlyCapitalRepayment = (principal / numberOfPayments).setScale(2, HALF_UP)
 
-      val currentInterestRate = interestService.rateOn(calculationDate).getOrElse(InterestRate.NONE).rate
+      val currentInterestRate = interestService.rateOn(calculationDate).rate
       val currentDailyRate = currentInterestRate / BigDecimal(Year.of(calculationDate.getYear).length()) / BigDecimal(100)
 
       repayments.map { r =>
@@ -128,13 +128,13 @@ class CalculatorService @Inject() (val interestService: InterestRateService, con
    * @param debits - only debits that are not after calculation date plus a week
    */
 
-  def calculateInitialPaymentInterest(debits: Seq[Debit])(implicit calculation: Calculation): BigDecimal = {
-    val currentInterestRate = interestService.rateOn(calculation.startDate).getOrElse(InterestRate.NONE).rate
+  def calculateInitialPaymentInterest(debits: Seq[DebitInput])(implicit calculation: CalculatorInput): BigDecimal = {
+    val currentInterestRate = interestService.rateOn(calculation.startDate).rate
     val currentDailyRate = currentInterestRate / BigDecimal(Year.of(calculation.startDate.getYear).length()) / BigDecimal(100)
 
-    val sortedDebits: Seq[Debit] = debits.sortBy(_.dueDate)
+    val sortedDebits: Seq[DebitInput] = debits.sortBy(_.dueDate)
 
-      def processDebits(amount: BigDecimal, debits: Seq[Debit]): BigDecimal = {
+      def processDebits(amount: BigDecimal, debits: Seq[DebitInput]): BigDecimal = {
         debits match {
           case debit :: Nil => calculateAmount(amount, debit)._1 * calculateDays(debit) * currentDailyRate
           case debit :: remaining =>
@@ -144,7 +144,7 @@ class CalculatorService @Inject() (val interestService: InterestRateService, con
         }
       }
 
-      def calculateDays(debit: Debit): Long = {
+      def calculateDays(debit: DebitInput): Long = {
         if (debit.dueDate.isBefore(calculation.startDate))
           configuration.getOptional[Long]("defaultInitialPaymentDays").getOrElse(7)
         else
@@ -152,7 +152,7 @@ class CalculatorService @Inject() (val interestService: InterestRateService, con
       }
 
       // Return - amount (used in the calculation), remaining downPayment
-      def calculateAmount(amount: BigDecimal, debit: Debit): (BigDecimal, BigDecimal) = {
+      def calculateAmount(amount: BigDecimal, debit: DebitInput): (BigDecimal, BigDecimal) = {
         if (amount > debit.amount) {
           (debit.amount, amount - debit.amount)
         } else {
@@ -169,15 +169,38 @@ class CalculatorService @Inject() (val interestService: InterestRateService, con
    * Get the historic interest rates that should be applied to a given debit and split the debit
    * into multiple debits, covering each interest rate.
    */
-  private def processDebit(implicit calculation: Calculation): (Debit) => Seq[Debit] = { debit =>
-    interestService.getRatesForPeriod(debit.dueDate, calculation.endDate).map { rate =>
-      (rate.containsDate(debit.dueDate), rate.containsDate(calculation.endDate)) match {
-        case DebitDueAndCalculationDatesWithinRate => debit.copy(endDate = Option(calculation.endDate), rate = Option(rate))
-        case DebitDueDateWithinRate                => debit.copy(endDate = rate.endDate, rate = Option(rate))
-        case CalculationDateWithinRate             => debit.copy(dueDate = rate.startDate, endDate = Option(calculation.endDate), rate = Option(rate))
-        case _                                     => debit.copy(dueDate = rate.startDate, endDate = rate.endDate, rate = Option(rate))
+  private def processDebit(debit: DebitInput)(implicit calculation: CalculatorInput): Seq[Debit] = {
+    interestService.getRatesForPeriod(
+      debit.dueDate,
+      calculation.endDate
+    ).map { rate =>
+        (rate.containsDate(debit.dueDate), rate.containsDate(calculation.endDate)) match {
+          case DebitDueAndCalculationDatesWithinRate => Debit(
+            amount  = debit.amount,
+            dueDate = debit.dueDate,
+            endDate = calculation.endDate,
+            rate    = rate
+          )
+          case DebitDueDateWithinRate => Debit(
+            amount  = debit.amount,
+            dueDate = debit.dueDate,
+            endDate = rate.endDate,
+            rate    = rate
+          )
+          case CalculationDateWithinRate => Debit(
+            amount  = debit.amount,
+            dueDate = rate.startDate,
+            endDate = calculation.endDate,
+            rate    = rate
+          )
+          case _ => Debit(
+            amount  = debit.amount,
+            dueDate = rate.startDate,
+            endDate = rate.endDate,
+            rate    = rate
+          )
+        }
       }
-    }
   }
 
   /**
@@ -185,9 +208,9 @@ class CalculatorService @Inject() (val interestService: InterestRateService, con
    * the number of days between two dates is inclusive (count one of the dates) or double
    * inclusive (count both days).
    */
-  private def calculateHistoricInterest(debits: Seq[Debit])(implicit calculation: Calculation): BigDecimal = {
+  private def calculateHistoricInterest(debits: Seq[Debit])(implicit calculation: CalculatorInput): BigDecimal = {
     debits.map { debit =>
-      val debitRateEndDate = debit.rate.getOrElse(InterestRate.NONE).endDate.get
+      val debitRateEndDate = debit.rate.endDate
       val inclusive = if (!(debits.head.equals(debit) | debits.last.equals(debit))) 1 else 0
       val endDate = historicRateEndDate(debitRateEndDate)
 
@@ -202,6 +225,6 @@ class CalculatorService @Inject() (val interestService: InterestRateService, con
     }.sum
   }
 
-  def historicRateEndDate(debitEndDate: LocalDate)(implicit calculation: Calculation): LocalDate =
+  def historicRateEndDate(debitEndDate: LocalDate)(implicit calculation: CalculatorInput): LocalDate =
     if (debitEndDate.getYear.equals(calculation.startDate.getYear)) calculation.startDate else debitEndDate
 }

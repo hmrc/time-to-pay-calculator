@@ -18,6 +18,8 @@ package uk.gov.hmrc.timetopaycalculator.models
 
 import java.time.LocalDate
 
+import play.api.libs.json.{Json, OFormat}
+
 case class PaymentSchedule(startDate:            LocalDate,
                            endDate:              LocalDate,
                            initialPayment:       BigDecimal,
@@ -50,7 +52,14 @@ case class PaymentSchedule(startDate:            LocalDate,
   }
 }
 
+object PaymentSchedule {
+  implicit val foramt: OFormat[PaymentSchedule] = Json.format[PaymentSchedule]
+}
 case class Instalment(paymentDate: LocalDate, amount: BigDecimal, interest: BigDecimal) {
   override def toString: String =
     s"""$paymentDate: $amount ($interest)"""
+}
+
+object Instalment {
+  implicit val format: OFormat[Instalment] = Json.format[Instalment]
 }

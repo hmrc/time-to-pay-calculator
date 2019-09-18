@@ -21,7 +21,7 @@ import java.time.LocalDate
 
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import play.api.Logger
-import uk.gov.hmrc.timetopaycalculator.models.{Calculation, Debit, Interest, PaymentSchedule}
+import uk.gov.hmrc.timetopaycalculator.models._
 
 import scala.io.Source
 class CalculationServiceSpe
@@ -32,7 +32,7 @@ class CalculationServiceSpec extends ITSpec {
   val durationService = fakeApplication().injector.instanceOf[DurationService]
   val calculatorService = fakeApplication().injector.instanceOf[CalculatorService]
 
-  def debit(amt: BigDecimal, due: String) = Debit(amount   = amt.setScale(2), dueDate = LocalDate.parse(due), interest = Some(Interest.none))
+  def debit(amt: BigDecimal, due: String) = DebitInput(amount  = amt.setScale(2), dueDate = LocalDate.parse(due))
   def date(date: String): LocalDate = LocalDate.parse(date)
 
   val interestCalculationScenarios = Table(
@@ -53,7 +53,7 @@ class CalculationServiceSpec extends ITSpec {
   forAll(interestCalculationScenarios) { (id, debits, startDate, endDate, firstPaymentDate, initialPayment, duration, totalPayable, totalInterestCharged, regularInstalmentAmount, finalInstalmentAmount) =>
     s"The calculator service should, for $id calculate totalInterestCharged of $totalInterestCharged with totalPayable of $totalPayable, regularInstalmentAmount of $regularInstalmentAmount and finalInstalmentAmount of $finalInstalmentAmount" in {
 
-      val calculation = Calculation(debits, initialPayment, startDate, endDate, Some(firstPaymentDate), "MONTHLY")
+      val calculation = CalculatorInput(debits, initialPayment, startDate, endDate, Some(firstPaymentDate), "MONTHLY")
 
       val schedule: PaymentSchedule = calculatorService.generateMultipleSchedules(calculation).head
 
@@ -96,7 +96,7 @@ class CalculationServiceSpec extends ITSpec {
   forAll(regularPaymentDateScenarios) { (id, debits, startDate, endDate, firstPaymentDate, initialPayment, duration) =>
     s"The calculator service should, for $id calculate a duration of $duration" in {
 
-      val calculation = Calculation(debits, initialPayment, startDate, endDate, Some(firstPaymentDate), "MONTHLY")
+      val calculation = CalculatorInput(debits, initialPayment, startDate, endDate, Some(firstPaymentDate), "MONTHLY")
 
       val schedule: PaymentSchedule = calculatorService.generateMultipleSchedules(calculation).head
 

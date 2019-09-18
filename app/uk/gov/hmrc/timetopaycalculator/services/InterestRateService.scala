@@ -33,10 +33,11 @@ class InterestRateService {
   val filename: String = "/interestRates.csv"
   val source: Source = Source.fromInputStream(getClass.getResourceAsStream(filename))
   val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
-  private val interestRateConsumer = { (rates: Seq[InterestRate], line: String) =>
+
+  def interestRateConsumer(rates: Seq[InterestRate], line: String): Seq[InterestRate] = {
     line.split(",").toSeq match {
       case Seq(date, rate) =>
-        val endDate: Option[LocalDate] = rates.lastOption.map(ir => ir.startDate.minusDays(1))
+        val endDate: LocalDate = rates.lastOption.map(ir => ir.startDate.minusDays(1)).getOrElse(LocalDate.MAX)
         rates :+ InterestRate(LocalDate.parse(date, DATE_TIME_FORMATTER), endDate, BigDecimal(rate))
       case _ => throw new IndexOutOfBoundsException()
     }
@@ -51,8 +52,10 @@ class InterestRateService {
     }
   }
 
-  def rateOn(date: LocalDate): Option[InterestRate] = {
-    rates.find(rate => rate.startDate.compareTo(date) <= 0)
+  def rateOn(date: LocalDate): InterestRate = {
+    rates.find(rate => rate.startDate.compareTo(date) <= 0).getOrElse(
+      throw new RuntimeException(s"It should not happen. This date is to old. There is no rate defined for it. [date:$date] [rates:$rates]")
+    )
   }
 
   implicit def orderingLocalDate: Ordering[LocalDate] = Ordering.fromLessThan(_ isBefore _)
@@ -62,13 +65,21 @@ class InterestRateService {
   def getRatesForPeriod(startDate: LocalDate, endDate: LocalDate): Seq[InterestRate] = {
     rates.filter { interestRate =>
       (interestRate.startDate.compareTo(endDate) <= 0) &&
-        (interestRate.endDate.getOrElse(LocalDate.MAX).compareTo(startDate) >= 0)
+        (interestRate.endDate.compareTo(startDate) >= 0)
     }.sorted.flatMap { rate =>
       val startYear = Seq(rate.startDate.getYear, startDate.getYear).max
-      val endYear = Seq(rate.endDate.getOrElse(LocalDate.MAX).getYear, endDate.getYear).min
+      val endYear = Seq(rate.endDate.getYear, endDate.getYear).min
 
       Range.inclusive(startYear, endYear).map { year =>
-        val ir = InterestRate(Seq(LocalDate.of(year, 1, 1), startDate, rate.startDate).max, Some(Seq(LocalDate.of(year, 12, 31), endDate, rate.endDate.getOrElse(endDate)).min), rate.rate)
+        val ir = InterestRate(
+          startDate = Seq(LocalDate.of(year, 1, 1), startDate, rate.startDate).max,
+          endDate   =
+            Seq(LocalDate.of(year, 12, 31),
+                endDate,
+                rate.endDate
+            ).min,
+          rate      = rate.rate
+        )
         Logger.info(s"Rate: $ir")
         ir
       }

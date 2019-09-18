@@ -18,19 +18,20 @@ package uk.gov.hmrc.timetopaycalculator.models
 
 import java.time.{LocalDate, Year}
 
-case class Debit(originCode: Option[String]       = None,
-                 amount:     BigDecimal,
-                 interest:   Option[Interest],
-                 dueDate:    LocalDate,
-                 endDate:    Option[LocalDate]    = None,
-                 rate:       Option[InterestRate] = None,
-                 taxYearEnd: Option[LocalDate]    = None) {
+import play.api.libs.json.{Json, OFormat}
 
-  def historicDailyRate: BigDecimal = rate.map(_.rate).getOrElse(BigDecimal(0)) / BigDecimal(Year.of(dueDate.getYear).length()) / BigDecimal(100)
+case class Debit(
+    amount:  BigDecimal,
+    dueDate: LocalDate,
+    endDate: LocalDate,
+    rate:    InterestRate) {
+
+  def historicDailyRate: BigDecimal = rate.rate / BigDecimal(Year.of(dueDate.getYear).length()) / BigDecimal(100)
 }
 
 case class Interest(amountAccrued: BigDecimal, calculationDate: LocalDate)
 
 object Interest {
-  val none = Interest(0, LocalDate.now)
+  implicit val formatInterest: OFormat[Interest] = Json.format[Interest]
+
 }

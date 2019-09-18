@@ -19,22 +19,27 @@ package uk.gov.hmrc.timetopaycalculator.models
 import java.time.LocalDate
 import java.time.LocalDate.{MAX, MIN}
 
-object InterestRate {
+import play.api.libs.json.{Json, OFormat}
 
-  object NONE extends InterestRate(MIN, None, BigDecimal(0))
-
-}
-
-case class InterestRate(startDate: LocalDate, endDate: Option[LocalDate], rate: BigDecimal) {
+case class InterestRate(
+    startDate: LocalDate,
+    endDate:   LocalDate,
+    rate:      BigDecimal
+) {
   def dailyRate: BigDecimal = rate / yearLength
 
   def yearLength: BigDecimal = {
-    val yrs = Range.inclusive(startDate.getYear, endDate.map(_.getYear).getOrElse(startDate.getYear))
+    val yrs = Range.inclusive(startDate.getYear, endDate.getYear)
 
     BigDecimal(yrs.map { yr =>
       LocalDate.of(yr, 1, 1).lengthOfYear()
     }.sum) / BigDecimal(yrs.size)
   }
 
-  def containsDate(date: LocalDate): Boolean = date.compareTo(startDate) >= 0 && (date.compareTo(endDate.getOrElse(MAX)) <= 0)
+  def containsDate(date: LocalDate): Boolean = date.compareTo(startDate) >= 0 && (date.compareTo(endDate) <= 0)
+}
+
+object InterestRate {
+  implicit val format: OFormat[InterestRate] = Json.format[InterestRate]
+
 }

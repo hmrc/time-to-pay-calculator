@@ -29,7 +29,7 @@ import scala.concurrent.Future
 class PaymentCalculationController @Inject() (val calculatorService: CalculatorService, cc: ControllerComponents) extends BackendController(cc) {
 
   def generate() = Action.async(parse.json) { implicit request =>
-    withJsonBody[Calculation] { calculation =>
+    withJsonBody[CalculatorInput] { calculation =>
       Future.successful(Ok(Json.toJson(calculatorService.generateMultipleSchedules(calculation))))
     }
   }
