@@ -44,12 +44,6 @@ class CalculatorService @Inject() (val interestService: InterestRateService, con
 
   implicit def orderingLocalDate: Ordering[LocalDate] = Ordering.fromLessThan(_ isBefore _)
 
-  def generateMultipleSchedules(implicit calculation: CalculatorInput): PaymentSchedule = {
-    val s = buildSchedule
-    logger.info(s"Payment Schedule: $s")
-    s
-  }
-
   /**
    * Build a PaymentSchedule, calculated in parts - historic interest (in the past up to start date),
    * initial payment interest, future interest (start date going forward) and instalments (monthly payments).
@@ -78,9 +72,20 @@ class CalculatorService @Inject() (val interestService: InterestRateService, con
 
     val totalInterest = (instalments.map(_.interest).sum + totalHistoricInterest + initialPaymentInterest).setScale(2, HALF_UP)
 
-    PaymentSchedule(calculation.startDate, calculation.endDate, calculation.initialPayment, amountToPay,
-      amountToPay - calculation.initialPayment, totalInterest, amountToPay + totalInterest,
-      instalments.init :+ Instalment(instalments.last.paymentDate, instalments.last.amount + totalInterest, instalments.last.interest))
+    PaymentSchedule(
+      calculation.startDate,
+      calculation.endDate,
+      calculation.initialPayment,
+      amountToPay,
+      amountToPay - calculation.initialPayment,
+      totalInterest,
+      amountToPay + totalInterest,
+      instalments.init :+ Instalment(
+        instalments.last.paymentDate,
+        instalments.last.amount + totalInterest,
+        instalments.last.interest
+      )
+    )
   }
 
   /**
@@ -90,19 +95,29 @@ class CalculatorService @Inject() (val interestService: InterestRateService, con
    */
   def calculateStagedPayments(implicit calculation: CalculatorInput): Seq[Instalment] = {
     // Get the dates of each instalment payment
-    val repayments = durationService.getRepaymentDates(calculation.getFirstPaymentDate, calculation.endDate)
+
+    val trueFirstPaymentDate = calculation.firstPaymentDate.getOrElse(calculation.startDate)
+    val repayments = durationService.getRepaymentDates(trueFirstPaymentDate, calculation.endDate)
     val numberOfPayments = BigDecimal(repayments.size)
+
+    //This var was already there in CalculatorInput case class ... TODO: refactor it without this var
+    var initialPaymentRemaining: BigDecimal = calculation.initialPayment
+      def applyInitialPaymentToDebt(debtAmount: BigDecimal): BigDecimal = debtAmount match {
+        case amt if amt <= initialPaymentRemaining =>
+          initialPaymentRemaining = initialPaymentRemaining - debtAmount; 0
+        case amt => val remainingDebt = amt - initialPaymentRemaining; initialPaymentRemaining = 0; remainingDebt
+      }
 
     val instalments = calculation.debits.sortBy(_.dueDate).flatMap { debit =>
       // Check if initial payment has been cleared - if not, then date to calculate interest from is a week later
-      val calculateFrom = if (calculation.initialPaymentRemaining > 0)
+      val calculateFrom = if (initialPaymentRemaining > 0)
         calculation.startDate.plusWeeks(1) else calculation.startDate
 
       val calculationDate = if (calculateFrom.isBefore(debit.dueDate))
         debit.dueDate else calculateFrom
 
       // Subtract the initial payment amount from the debts, beginning with the oldest
-      val principal = calculation.applyInitialPaymentToDebt(debit.amount)
+      val principal = applyInitialPaymentToDebt(debit.amount)
 
       val monthlyCapitalRepayment = (principal / numberOfPayments).setScale(2, HALF_UP)
 

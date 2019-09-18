@@ -29,31 +29,7 @@ final case class PaymentSchedule(
     totalInterestCharged: BigDecimal,
     totalPayable:         BigDecimal,
     instalments:          Seq[Instalment]
-) {
-
-  override def toString: String =
-    s"""
-       |\tStart Date:         $startDate
-       |\tEnd Date:           $endDate
-       |
-       |\tInitial Debit:      $amountToPay
-       |\tInitial payment:    $initialPayment
-       |\tTotal interest:     $totalInterestCharged
-       |\tTotal payable:      $totalPayable
-       |\tInstalment balance: $instalmentBalance
-       |
-       |\tInstalment count:   ${instalments.size}
-       |
-       |\tInstalments:
-       |\t\t$instalmentsToString
-     """.stripMargin
-
-  def instalmentsToString: String = {
-    instalments.map(_.toString).foldLeft("") { (acc, instalment) =>
-      s"""$acc\n\t\t$instalment"""
-    }
-  }
-}
+)
 
 object PaymentSchedule {
   implicit val foramt: OFormat[PaymentSchedule] = Json.format[PaymentSchedule]
