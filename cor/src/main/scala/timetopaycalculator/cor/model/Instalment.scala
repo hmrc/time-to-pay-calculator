@@ -14,25 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.timetopaycalculator.models
+package timetopaycalculator.cor.model
 
-import java.time.{LocalDate, Year}
+import java.time.LocalDate
 
 import play.api.libs.json.{Json, OFormat}
 
-case class Debit(
-    amount:  BigDecimal,
-    dueDate: LocalDate,
-    endDate: LocalDate,
-    rate:    InterestRate
-) {
-
-  def historicDailyRate: BigDecimal = rate.rate / BigDecimal(Year.of(dueDate.getYear).length()) / BigDecimal(100)
+case class Instalment(paymentDate: LocalDate, amount: BigDecimal, interest: BigDecimal) {
+  override def toString: String =
+    s"""$paymentDate: $amount ($interest)"""
 }
 
-case class Interest(amountAccrued: BigDecimal, calculationDate: LocalDate)
-
-object Interest {
-  implicit val formatInterest: OFormat[Interest] = Json.format[Interest]
-
+object Instalment {
+  implicit val format: OFormat[Instalment] = Json.format[Instalment]
 }

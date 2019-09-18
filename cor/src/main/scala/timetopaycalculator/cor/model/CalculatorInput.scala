@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.timetopaycalculator.models
+package timetopaycalculator.cor.model
 
 import java.time.LocalDate
 
@@ -25,8 +25,8 @@ case class CalculatorInput(
     initialPayment:   BigDecimal,
     startDate:        LocalDate,
     endDate:          LocalDate,
-    firstPaymentDate: Option[LocalDate] = None,
-    paymentFrequency: String) {
+    firstPaymentDate: Option[LocalDate] = None
+) {
 
   var initialPaymentRemaining: BigDecimal = initialPayment
 
@@ -50,10 +50,3 @@ object CalculatorInput {
   implicit val format: OFormat[CalculatorInput] = OFormat(reads, writes)
 
 }
-
-final case class DebitInput(amount: BigDecimal, dueDate: LocalDate)
-
-object DebitInput {
-  implicit val format: OFormat[DebitInput] = Json.format[DebitInput]
-}
-

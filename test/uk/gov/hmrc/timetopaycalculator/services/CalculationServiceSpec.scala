@@ -21,6 +21,7 @@ import java.time.LocalDate
 
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import play.api.Logger
+import timetopaycalculator.cor.model.{CalculatorInput, DebitInput, PaymentSchedule}
 import uk.gov.hmrc.timetopaycalculator.models._
 
 import scala.io.Source
@@ -53,9 +54,9 @@ class CalculationServiceSpec extends ITSpec {
   forAll(interestCalculationScenarios) { (id, debits, startDate, endDate, firstPaymentDate, initialPayment, duration, totalPayable, totalInterestCharged, regularInstalmentAmount, finalInstalmentAmount) =>
     s"The calculator service should, for $id calculate totalInterestCharged of $totalInterestCharged with totalPayable of $totalPayable, regularInstalmentAmount of $regularInstalmentAmount and finalInstalmentAmount of $finalInstalmentAmount" in {
 
-      val calculation = CalculatorInput(debits, initialPayment, startDate, endDate, Some(firstPaymentDate), "MONTHLY")
+      val calculation = CalculatorInput(debits, initialPayment, startDate, endDate, Some(firstPaymentDate))
 
-      val schedule: PaymentSchedule = calculatorService.generateMultipleSchedules(calculation).head
+      val schedule: PaymentSchedule = calculatorService.generateMultipleSchedules(calculation)
 
       val amountPaid = schedule.instalments.map { _.amount }.sum
 
@@ -96,9 +97,9 @@ class CalculationServiceSpec extends ITSpec {
   forAll(regularPaymentDateScenarios) { (id, debits, startDate, endDate, firstPaymentDate, initialPayment, duration) =>
     s"The calculator service should, for $id calculate a duration of $duration" in {
 
-      val calculation = CalculatorInput(debits, initialPayment, startDate, endDate, Some(firstPaymentDate), "MONTHLY")
+      val calculation = CalculatorInput(debits, initialPayment, startDate, endDate, Some(firstPaymentDate))
 
-      val schedule: PaymentSchedule = calculatorService.generateMultipleSchedules(calculation).head
+      val schedule: PaymentSchedule = calculatorService.generateMultipleSchedules(calculation)
 
       val amountPaid = schedule.instalments.map { _.amount }.sum
 

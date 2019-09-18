@@ -14,17 +14,26 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.timetopaycalculator.controllers
+package timetopaytaxpayer.cor
 
-import play.mvc.Http.Status.OK
-import support.{ITSpec, TestConnector}
+import com.google.inject.{AbstractModule, Provides, Singleton}
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
-class EndDateControllerSpec extends ITSpec {
+import scala.concurrent.ExecutionContext
 
-  val connector = fakeApplication().injector.instanceOf[TestConnector]
+class CalculatorCorModule extends AbstractModule {
 
-  "endDateController endDateController allow a valid request" in {
-    val response = connector.enddate("enddate/10000@2017-01-01/15000@2018-02-01").futureValue
-    response.status shouldBe OK
-  }
+  override def configure(): Unit = {}
+
+  @Provides
+  @Singleton
+  def provideCalculatorConnector(
+      servicesConfig: ServicesConfig,
+      http:           HttpClient
+  )(
+      implicit
+      ec: ExecutionContext
+  ): CalculatorConnector = new CalculatorConnector(servicesConfig, http)
+
 }

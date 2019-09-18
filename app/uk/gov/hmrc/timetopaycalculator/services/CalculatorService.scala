@@ -21,6 +21,7 @@ import java.time.{LocalDate, Year}
 import javax.inject.{Inject, Singleton}
 import play.api.Configuration
 import play.api.Logger._
+import timetopaycalculator.cor.model.{CalculatorInput, DebitInput, Instalment, PaymentSchedule}
 import uk.gov.hmrc.timetopaycalculator.models._
 
 import scala.math.BigDecimal.RoundingMode.HALF_UP
@@ -43,8 +44,11 @@ class CalculatorService @Inject() (val interestService: InterestRateService, con
 
   implicit def orderingLocalDate: Ordering[LocalDate] = Ordering.fromLessThan(_ isBefore _)
 
-  def generateMultipleSchedules(implicit calculation: CalculatorInput): Seq[PaymentSchedule] =
-    Seq(buildSchedule).map { s => logger.info(s"Payment Schedule: $s"); s }
+  def generateMultipleSchedules(implicit calculation: CalculatorInput): PaymentSchedule = {
+    val s = buildSchedule
+    logger.info(s"Payment Schedule: $s")
+    s
+  }
 
   /**
    * Build a PaymentSchedule, calculated in parts - historic interest (in the past up to start date),

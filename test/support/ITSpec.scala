@@ -40,20 +40,15 @@ import org.scalatest.mockito.MockitoSugar
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfterEach, FreeSpecLike, Matchers}
 import org.scalatestplus.play.guice.GuiceOneServerPerTest
+import play.api.Application
 import play.api.inject.guice.{GuiceApplicationBuilder, GuiceableModule}
-import play.api.mvc.Result
-import play.api.{Application, Configuration}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import timetopaytaxpayer.cor.CalculatorCorModule
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 /**
  * This is common spec for every test case which brings all of useful routines we want to use in our scenarios.
  */
-
 trait ITSpec
   extends FreeSpecLike
   with RichMatchers
@@ -69,29 +64,20 @@ trait ITSpec
   }
 
   implicit lazy val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
+
   lazy val overridingsModule = new AbstractModule {
     override def configure(): Unit = ()
   }
-  lazy val servicesConfig = fakeApplication.injector.instanceOf[ServicesConfig]
-  lazy val config = fakeApplication.injector.instanceOf[Configuration]
-  val baseUrl: String = s"http://localhost:$WireMockSupport.port"
 
   override implicit val patienceConfig = PatienceConfig(
     timeout  = scaled(Span(3, Seconds)),
-    interval = scaled(Span(300, Millis)))
-
-  implicit def emptyHC = HeaderCarrier()
-
-  def httpClient = fakeApplication().injector.instanceOf[HttpClient]
+    interval = scaled(Span(300, Millis))
+  )
 
   override def fakeApplication(): Application = new GuiceApplicationBuilder()
-    .overrides(GuiceableModule.fromGuiceModules(Seq(overridingsModule)))
-    .configure(Map[String, Any]()).build()
-
-  def await[A](future: Future[A])(implicit timeout: Duration): A = Await.result(future, timeout)
-
-  def status(of: Future[Result])(implicit timeout: Duration): Int = status(Await.result(of, timeout))
-
-  def status(of: Result) = of.header.status
-
+    .overrides(GuiceableModule.fromGuiceModules(Seq(overridingsModule, new CalculatorCorModule)))
+    .configure(Map[String, Any](
+      "microservice.services.time-to-pay-calculator.port" -> port,
+      "microservice.services.time-to-pay-calculator.host" -> "localhost"
+    )).build()
 }

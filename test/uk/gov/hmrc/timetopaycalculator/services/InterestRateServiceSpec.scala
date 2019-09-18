@@ -31,7 +31,8 @@ class InterestRateServiceSpec extends ITSpec {
     ("file", "type"),
     ("/nullPointer-interestRates.csv", classOf[IndexOutOfBoundsException]),
     ("/dateError-interestRates.csv", classOf[DateTimeParseException]),
-    ("/decimalError-interestRates.csv", classOf[NumberFormatException]))
+    ("/decimalError-interestRates.csv", classOf[NumberFormatException])
+  )
   val dateChecks = Table(
     ("date", "rate"),
     (LocalDate.parse("2016-11-01"), 2.75),
@@ -70,7 +71,8 @@ class InterestRateServiceSpec extends ITSpec {
     ("startDate", "endDate", "periods"),
     (LocalDate.parse("2016-04-01"), LocalDate.parse("2016-04-01"), 1),
     (LocalDate.parse("2016-04-01"), LocalDate.parse("2016-10-01"), 2),
-    (LocalDate.parse("2016-11-30"), LocalDate.parse("2017-01-01"), 2))
+    (LocalDate.parse("2016-11-30"), LocalDate.parse("2017-01-01"), 2)
+  )
 
   forAll(dateChecks) { (date, rate) =>
     s"return a rate of $rate for $date" in {

@@ -74,9 +74,10 @@ class InterestRateService {
         val ir = InterestRate(
           startDate = Seq(LocalDate.of(year, 1, 1), startDate, rate.startDate).max,
           endDate   =
-            Seq(LocalDate.of(year, 12, 31),
-                endDate,
-                rate.endDate
+            Seq(
+              LocalDate.of(year, 12, 31),
+              endDate,
+              rate.endDate
             ).min,
           rate      = rate.rate
         )
