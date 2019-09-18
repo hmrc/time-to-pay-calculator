@@ -56,7 +56,7 @@ class CalculationServiceSpec extends ITSpec {
 
       val calculation = CalculatorInput(debits, initialPayment, startDate, endDate, Some(firstPaymentDate))
 
-      val schedule: PaymentSchedule = calculatorService.generateMultipleSchedules(calculation)
+      val schedule: PaymentSchedule = calculatorService.buildSchedule(calculation)
 
       val amountPaid = schedule.instalments.map { _.amount }.sum
 
@@ -99,7 +99,7 @@ class CalculationServiceSpec extends ITSpec {
 
       val calculation = CalculatorInput(debits, initialPayment, startDate, endDate, Some(firstPaymentDate))
 
-      val schedule: PaymentSchedule = calculatorService.generateMultipleSchedules(calculation)
+      val schedule: PaymentSchedule = calculatorService.buildSchedule(calculation)
 
       val amountPaid = schedule.instalments.map { _.amount }.sum
 
