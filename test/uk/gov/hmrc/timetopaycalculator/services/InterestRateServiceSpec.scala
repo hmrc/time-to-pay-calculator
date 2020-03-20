@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,8 @@ class InterestRateServiceSpec extends ITSpec {
     (LocalDate.parse("2016-04-01"), 3.0),
     (LocalDate.parse("2016-08-04"), 3.0),
     (LocalDate.parse("2016-08-05"), 3.0),
-    (LocalDate.parse("2016-08-03"), 3.0)
+    (LocalDate.parse("2016-08-03"), 3.0),
+    (LocalDate.parse("2020-03-19"), 2.6)
   )
 
   forAll(exceptionProducingFiles) { (name, exType) =>
@@ -60,12 +61,12 @@ class InterestRateServiceSpec extends ITSpec {
     }
 
     thrown.getMessage should startWith (
-      "It should not happen. This date is to old. There is no rate defined for it. [date:1990-01-01]"
+      "It should not happen. This date is too old. There is no rate defined for it. [date:1990-01-01]"
     )
   }
 
-  "The InterestRateService: contain 17 entries with the default rate file" in {
-    InterestRateService.rates.size shouldBe 19
+  "The InterestRateService: contain 20 entries with the default rate file" in {
+    InterestRateService.rates.size shouldBe 20
   }
   val dateRanges = Table(
     ("startDate", "endDate", "periods"),
