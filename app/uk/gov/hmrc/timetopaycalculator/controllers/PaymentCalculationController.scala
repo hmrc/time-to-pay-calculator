@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package uk.gov.hmrc.timetopaycalculator.controllers
 
 import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
 import timetopaycalculator.cor.model.{CalculatorInput, PaymentSchedule}
@@ -31,6 +32,7 @@ class PaymentCalculationController @Inject() (val calculatorService: CalculatorS
   def generate() = Action.async(parse.json) { implicit request =>
     withJsonBody[CalculatorInput] { calculation =>
       val schedule: PaymentSchedule = calculatorService.buildSchedule(calculation)
+      Logger
       Future.successful(Ok(Json.toJson(schedule)))
     }
   }

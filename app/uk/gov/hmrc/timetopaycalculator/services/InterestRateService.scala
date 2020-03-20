@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ class InterestRateService {
 
   def rateOn(date: LocalDate): InterestRate = {
     rates.find(rate => rate.startDate.compareTo(date) <= 0).getOrElse(
-      throw new RuntimeException(s"It should not happen. This date is to old. There is no rate defined for it. [date:$date] [rates:$rates]")
+      throw new RuntimeException(s"It should not happen. This date is too old. There is no rate defined for it. [date:$date] [rates:$rates]")
     )
   }
 
