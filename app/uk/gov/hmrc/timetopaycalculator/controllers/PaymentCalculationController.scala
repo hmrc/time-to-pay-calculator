@@ -17,7 +17,6 @@
 package uk.gov.hmrc.timetopaycalculator.controllers
 
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
 import timetopaycalculator.cor.model.{CalculatorInput, PaymentSchedule}
@@ -32,7 +31,6 @@ class PaymentCalculationController @Inject() (val calculatorService: CalculatorS
   def generate() = Action.async(parse.json) { implicit request =>
     withJsonBody[CalculatorInput] { calculation =>
       val schedule: PaymentSchedule = calculatorService.buildSchedule(calculation)
-      Logger
       Future.successful(Ok(Json.toJson(schedule)))
     }
   }
