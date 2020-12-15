@@ -1,3 +1,9 @@
+
+#This microservice has been integrated into ssttp-frontend. It's not used anymore.
+
+-----------
+
+
 # time-to-pay-calculator
 
 ## About
