@@ -17,7 +17,6 @@
 package uk.gov.hmrc.timetopaycalculator.models
 
 import java.time.LocalDate
-import java.time.LocalDate.{MAX, MIN}
 
 import play.api.libs.json.{Json, OFormat}
 

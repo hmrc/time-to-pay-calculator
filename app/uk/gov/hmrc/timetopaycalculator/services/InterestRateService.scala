@@ -19,7 +19,6 @@ package uk.gov.hmrc.timetopaycalculator.services
 import java.io.FileNotFoundException
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-
 import javax.inject.Singleton
 import play.api.Logger
 import uk.gov.hmrc.timetopaycalculator.models.InterestRate
@@ -34,6 +33,8 @@ class InterestRateService {
   val source: Source = Source.fromInputStream(getClass.getResourceAsStream(filename))
   val DATE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
 
+  private val logger = Logger(getClass)
+
   def interestRateConsumer(rates: Seq[InterestRate], line: String): Seq[InterestRate] = {
     line.split(",").toSeq match {
       case Seq(date, rate) =>
@@ -47,7 +48,7 @@ class InterestRateService {
     try {
       source.getLines().foldLeft(Seq[InterestRate]())(interestRateConsumer)
     } catch {
-      case e: NullPointerException => throw new FileNotFoundException(s"$source")
+      case _: NullPointerException => throw new FileNotFoundException(s"$source")
       case t: Throwable            => throw t
     }
   }
@@ -81,7 +82,7 @@ class InterestRateService {
             ).min,
           rate      = rate.rate
         )
-        Logger.info(s"Rate: $ir")
+        logger.info(s"Rate: $ir")
         ir
       }
     }

@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.timetopaycalculator.controllers
 
-import java.time.LocalDate
+import play.api.Application
+import play.api.inject.guice.{GuiceApplicationBuilder, GuiceableModule}
 
+import java.time.LocalDate
 import support.ITSpec
 import timetopaycalculator.cor.model.{CalculatorInput, DebitInput, Instalment, PaymentSchedule}
-import timetopaytaxpayer.cor.CalculatorConnector
+import timetopaytaxpayer.cor.{CalculatorConnector, CalculatorCorModule}
 import uk.gov.hmrc.http.HeaderCarrier
 
 object TdAll {
@@ -52,41 +54,47 @@ object TdAll {
 }
 
 class PaymentCalculationControllerSpec extends ITSpec {
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   import TdAll._
 
-  "compute calculation" in {
+  override def fakeApplication(): Application = new GuiceApplicationBuilder()
+    .overrides(GuiceableModule.fromGuiceModules(Seq(overridingsModule, new CalculatorCorModule)))
+    .build()
 
-    val connector = app.injector.instanceOf[CalculatorConnector]
+  "a test" must {
+    "compute calculation" in {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+      fakeApplication().configuration
+      val connector = fakeApplication().injector.instanceOf[CalculatorConnector]
 
-    val result = connector.calculatePaymentschedule(TdAll.calculatorInput).futureValue
+      val result = connector.calculatePaymentschedule(TdAll.calculatorInput, s"http://localhost:$port").futureValue
 
-    result shouldBe PaymentSchedule(
-      startDate            = "2019-01-31",
-      endDate              = "2020-02-18",
-      initialPayment       = "123.11",
-      amountToPay          = 1200,
-      instalmentBalance    = "1076.89",
-      totalInterestCharged = "5.48",
-      totalPayable         = "1205.48",
-      instalments          = List(
-        Instalment("2019-02-18", "82.84", "0"),
-        Instalment("2019-03-18", "82.84", "0"),
-        Instalment("2019-04-18", "82.84", "0"),
-        Instalment("2019-05-18", "82.84", "0"),
-        Instalment("2019-06-18", "82.84", "0.03097561643835616438356164383561644"),
-        Instalment("2019-07-18", "82.84", "0.1084146575342465753424657534246575"),
-        Instalment("2019-08-18", "82.84", "0.188435"),
-        Instalment("2019-09-18", "82.84", "0.2972245205479452054794520547945206"),
-        Instalment("2019-10-18", "82.84", "0.5185094520547945205479452054794521"),
-        Instalment("2019-11-18", "82.84", "0.7471705479452054794520547945205479"),
-        Instalment("2019-12-18", "82.84", "0.9684554794520547945205479452054796"),
-        Instalment("2020-01-18", "82.84", "1.197116575342465753424657534246575"),
-        Instalment("2020-02-18", "88.32", "1.425777671232876712328767123287671")
+      result mustBe PaymentSchedule(
+        startDate            = "2019-01-31",
+        endDate              = "2020-02-18",
+        initialPayment       = "123.11",
+        amountToPay          = 1200,
+        instalmentBalance    = "1076.89",
+        totalInterestCharged = "5.48",
+        totalPayable         = "1205.48",
+        instalments          = List(
+          Instalment("2019-02-18", "82.84", "0"),
+          Instalment("2019-03-18", "82.84", "0"),
+          Instalment("2019-04-18", "82.84", "0"),
+          Instalment("2019-05-18", "82.84", "0"),
+          Instalment("2019-06-18", "82.84", "0.03097561643835616438356164383561644"),
+          Instalment("2019-07-18", "82.84", "0.1084146575342465753424657534246575"),
+          Instalment("2019-08-18", "82.84", "0.188435"),
+          Instalment("2019-09-18", "82.84", "0.2972245205479452054794520547945206"),
+          Instalment("2019-10-18", "82.84", "0.5185094520547945205479452054794521"),
+          Instalment("2019-11-18", "82.84", "0.7471705479452054794520547945205479"),
+          Instalment("2019-12-18", "82.84", "0.9684554794520547945205479452054796"),
+          Instalment("2020-01-18", "82.84", "1.197116575342465753424657534246575"),
+          Instalment("2020-02-18", "88.32", "1.425777671232876712328767123287671")
+        )
       )
-    )
+    }
   }
 
 }

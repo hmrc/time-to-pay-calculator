@@ -1,15 +1,14 @@
-import TestPhases.oneForkedJvmPerTest
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
-import uk.gov.hmrc.DefaultBuildSettings.{defaultSettings, integrationTestSettings, scalaSettings}
+import uk.gov.hmrc.DefaultBuildSettings.scalaSettings
 import uk.gov.hmrc.SbtArtifactory
-import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
-import wartremover.{Wart, wartremoverErrors, wartremoverExcluded, wartremoverWarnings}
+import wartremover.Wart
+import wartremover.WartRemover.autoImport.{wartremoverErrors, wartremoverExcluded, wartremoverWarnings}
 
 lazy val appName = "time-to-pay-calculator"
 
 val scalaCompilerOptions = Seq(
-  "-Xfatal-warnings",
+//  "-Xfatal-warnings",
   "-Xlint:-missing-interpolator,_",
   "-Yno-adapted-args",
   "-Ywarn-value-discard",
@@ -75,14 +74,9 @@ lazy val wartRemoverError = {
     Wart.FinalVal,
     Wart.JavaConversions,
     Wart.JavaSerializable,
-    //Wart.LeakingSealed,
     Wart.MutableDataStructures,
     Wart.Null,
-    //Wart.OptionPartial,
-    //Wart.Recursion,
     Wart.Return,
-    //Wart.TraversableOps,
-    //Wart.TryPartial,
 //    Wart.Var, //TODO: if you have time uncomment it and fix compilation error
     Wart.While)
   wartremoverErrors in(Compile, compile) ++= errorWarts
@@ -94,18 +88,15 @@ lazy val scoverageSettings = {
     // Semicolon-separated list of regexs matching classes to exclude
     ScoverageKeys.coverageExcludedPackages := "<empty>;.*BuildInfo.*;Reverse.*;app.Routes.*;prod.*;testOnlyDoNotUseInProd.*;manualdihealth.*;forms.*;config.*;",
     ScoverageKeys.coverageExcludedFiles := ".*microserviceGlobal.*;.*microserviceWiring.*;.*ApplicationLoader.*;.*ApplicationConfig.*;.*package.*;.*Routes.*;.*TestOnlyController.*;.*WebService.*",
-    ScoverageKeys.coverageMinimum := 80,
+    ScoverageKeys.coverageMinimumStmtTotal := 80,
     ScoverageKeys.coverageFailOnMinimum := false,
     ScoverageKeys.coverageHighlighting := true
   )
 }
 
 lazy val commonSettings = Seq(
-  scalaVersion := "2.11.11",
   majorVersion := 0,
   scalacOptions ++= scalaCompilerOptions,
-  resolvers ++= Seq(Resolver.bintrayRepo("hmrc", "releases"), Resolver.jcenterRepo),
-  evictionWarningOptions in update := EvictionWarningOptions.default.withWarnScalaVersionEviction(false),
   wartremoverExcluded ++=
     (baseDirectory.value / "it").get ++
       (baseDirectory.value / "test").get ++
@@ -134,11 +125,11 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     libraryDependencies ++= Seq(
       ws,
-      "uk.gov.hmrc" %% "bootstrap-play-26" % "0.41.0",
-      "uk.gov.hmrc" %% "domain" % "5.6.0-play-26",
-      "org.scalatest" %% "scalatest" % "3.0.4" % Test,
-      "org.pegdown" % "pegdown" % "1.6.0" % Test,
-      "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
+      "uk.gov.hmrc" %% "bootstrap-backend-play-28" % "5.3.0",
+      "org.scalatest" %% "scalatest" % "3.1.0" % Test,
+      "org.scalatestplus" %% "mockito-3-4" % "3.2.9.0" % Test,
+      "com.vladsch.flexmark" %  "flexmark-all" % "0.35.10" % Test,
+      "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test,
       "com.github.tomakehurst" % "wiremock-jre8" % "2.21.0" % Test,
       "org.mockito" % "mockito-core" % "2.23.0" % Test
     ),
@@ -150,6 +141,7 @@ lazy val microservice = Project(appName, file("."))
       "timetopaycalculator.cor.model._"
     )
   )
+  .settings(scalaVersion := "2.12.14")
   .dependsOn(cor)
   .aggregate(cor)
 
@@ -161,9 +153,10 @@ lazy val cor = Project(appName + "-cor", file("cor"))
     SbtArtifactory
   )
   .settings(commonSettings: _*)
+  .settings(scalaVersion := "2.12.14")
   .settings(
     libraryDependencies ++= List(
       "com.typesafe.play" %% "play" % play.core.PlayVersion.current % Provided,
-      "uk.gov.hmrc" %% "bootstrap-play-26" % "0.41.0" % Provided
+      "uk.gov.hmrc" %% "bootstrap-backend-play-28" % "5.3.0" % Provided
     )
   )

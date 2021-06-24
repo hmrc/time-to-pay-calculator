@@ -34,29 +34,24 @@ package support
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
-
 import com.google.inject.AbstractModule
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.PlaySpec
 import org.scalatest.time.{Millis, Seconds, Span}
-import org.scalatest.{BeforeAndAfterEach, FreeSpecLike, Matchers}
+import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.guice.GuiceOneServerPerTest
-import play.api.Application
-import play.api.inject.guice.{GuiceApplicationBuilder, GuiceableModule}
-import timetopaytaxpayer.cor.CalculatorCorModule
-
 import scala.concurrent.ExecutionContext
 
 /**
  * This is common spec for every test case which brings all of useful routines we want to use in our scenarios.
  */
 trait ITSpec
-  extends FreeSpecLike
+  extends PlaySpec
   with RichMatchers
   with MockitoSugar
   with BeforeAndAfterEach
   with GuiceOneServerPerTest
-  with WireMockSupport
-  with Matchers {
+  with WireMockSupport {
 
   lazy val frozenZonedDateTime: ZonedDateTime = {
     val formatter = DateTimeFormatter.ISO_DATE_TIME
@@ -65,19 +60,13 @@ trait ITSpec
 
   implicit lazy val ec: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
-  lazy val overridingsModule = new AbstractModule {
+  lazy val overridingsModule: AbstractModule = new AbstractModule {
     override def configure(): Unit = ()
   }
 
-  override implicit val patienceConfig = PatienceConfig(
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(
     timeout  = scaled(Span(3, Seconds)),
     interval = scaled(Span(300, Millis))
   )
 
-  override def fakeApplication(): Application = new GuiceApplicationBuilder()
-    .overrides(GuiceableModule.fromGuiceModules(Seq(overridingsModule, new CalculatorCorModule)))
-    .configure(Map[String, Any](
-      "microservice.services.time-to-pay-calculator.port" -> port,
-      "microservice.services.time-to-pay-calculator.host" -> "localhost"
-    )).build()
 }

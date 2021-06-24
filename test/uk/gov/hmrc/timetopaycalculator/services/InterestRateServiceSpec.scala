@@ -50,7 +50,7 @@ class InterestRateServiceSpec extends ITSpec {
       try {
         service rateOn now
       } catch {
-        case ex: Throwable => ex.getClass shouldBe exType
+        case ex: Throwable => ex.getClass mustBe exType
       }
     }
   }
@@ -60,13 +60,13 @@ class InterestRateServiceSpec extends ITSpec {
       InterestRateService.rateOn(LocalDate.parse("1990-01-01"))
     }
 
-    thrown.getMessage should startWith (
+    thrown.getMessage must startWith (
       "It should not happen. This date is too old. There is no rate defined for it. [date:1990-01-01]"
     )
   }
 
   "The InterestRateService: contain 20 entries with the default rate file" in {
-    InterestRateService.rates.size shouldBe 20
+    InterestRateService.rates.size mustBe 20
   }
   val dateRanges = Table(
     ("startDate", "endDate", "periods"),
@@ -77,7 +77,7 @@ class InterestRateServiceSpec extends ITSpec {
 
   forAll(dateChecks) { (date, rate) =>
     s"return a rate of $rate for $date" in {
-      InterestRateService.rateOn(date).rate shouldBe rate
+      InterestRateService.rateOn(date).rate mustBe rate
     }
   }
 
@@ -87,7 +87,7 @@ class InterestRateServiceSpec extends ITSpec {
 
   forAll(dateRanges) { (startDate, endDate, periods) =>
     s"The InterestRateService: return $periods between $startDate and $endDate" in {
-      InterestRateService.getRatesForPeriod(startDate, endDate).size shouldBe periods
+      InterestRateService.getRatesForPeriod(startDate, endDate).size mustBe periods
     }
   }
 

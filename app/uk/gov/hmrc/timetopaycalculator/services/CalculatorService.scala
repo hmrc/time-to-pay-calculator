@@ -17,14 +17,13 @@
 package uk.gov.hmrc.timetopaycalculator.services
 
 import java.time.{LocalDate, Year}
-
 import javax.inject.{Inject, Singleton}
 import play.api.Configuration
-import play.api.Logger._
 import timetopaycalculator.cor.model.{CalculatorInput, DebitInput, Instalment, PaymentSchedule}
 import uk.gov.hmrc.timetopaycalculator.models._
 
 import scala.math.BigDecimal.RoundingMode.HALF_UP
+import play.api.Logger
 
 /**
  * When calculating interest, the calculation is split up into three sections:
@@ -38,9 +37,11 @@ import scala.math.BigDecimal.RoundingMode.HALF_UP
 @Singleton
 class CalculatorService @Inject() (val interestService: InterestRateService, configuration: Configuration)(val durationService: DurationService) {
 
-  val DebitDueAndCalculationDatesWithinRate = Tuple2(true, true)
-  val DebitDueDateWithinRate = Tuple2(true, false)
-  val CalculationDateWithinRate = Tuple2(false, true)
+  private val DebitDueAndCalculationDatesWithinRate = Tuple2(true, true)
+  private val DebitDueDateWithinRate = Tuple2(true, false)
+  private val CalculationDateWithinRate = Tuple2(false, true)
+
+  private val logger = Logger(getClass)
 
   implicit def orderingLocalDate: Ordering[LocalDate] = Ordering.fromLessThan(_ isBefore _)
 

@@ -18,8 +18,6 @@ package uk.gov.hmrc.timetopaycalculator
 
 import java.time.{LocalDate => Day}
 
-import scala.annotation.tailrec
-
 /**
  * Calculates the maximum permissible end date for a repayment
  * period. Within this window of time a monthly schedule will be

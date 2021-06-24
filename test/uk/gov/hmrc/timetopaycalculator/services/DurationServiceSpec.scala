@@ -37,7 +37,7 @@ class DurationServiceSpec extends ITSpec {
 
   forAll(periodCalculationData) { (startDate, endDate, periods, description) =>
     s"The DurationService: return $periods for $startDate to $endDate ($description)" in {
-      service.getRepaymentDates(startDate, endDate).size shouldBe periods
+      service.getRepaymentDates(startDate, endDate).size mustBe periods
     }
   }
 
@@ -62,7 +62,7 @@ class DurationServiceSpec extends ITSpec {
 
   forAll(daysBetweenData) { (startDate, endDate, count) =>
     s"The DurationService: $count days between $startDate and $endDate" in {
-      service.getDaysBetween(startDate, endDate) shouldBe count
+      service.getDaysBetween(startDate, endDate) mustBe count
     }
   }
 
