@@ -144,6 +144,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(scalaVersion := "2.12.14")
   .dependsOn(cor)
   .aggregate(cor)
+  .settings(scalacOptions in Compile -= "utf8")
 
 
 lazy val cor = Project(appName + "-cor", file("cor"))
