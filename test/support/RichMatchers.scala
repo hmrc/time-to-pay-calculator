@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import com.github.tomakehurst.wiremock.verification.LoggedRequest
 import org.scalatest._
 import org.scalatest.concurrent.{Eventually, IntegrationPatience, ScalaFutures}
 import play.api.libs.json.{JsValue, Json}
+import org.scalatest.diagrams.Diagrams
 
 import scala.language.implicitConversions
 
 trait RichMatchers
-  extends Matchers
-  with DiagrammedAssertions
+  extends Diagrams
   with TryValues
   with EitherValues
   with OptionValues

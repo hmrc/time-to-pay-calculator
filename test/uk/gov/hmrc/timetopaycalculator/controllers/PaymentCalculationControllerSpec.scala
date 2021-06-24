@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,18 @@
 
 package uk.gov.hmrc.timetopaycalculator.controllers
 
-import java.time.LocalDate
+import play.api.Application
+import play.api.inject.guice.{GuiceApplicationBuilder, GuiceableModule}
 
+import java.time.LocalDate
 import support.ITSpec
 import timetopaycalculator.cor.model.{CalculatorInput, DebitInput, Instalment, PaymentSchedule}
-import timetopaytaxpayer.cor.CalculatorConnector
+import timetopaytaxpayer.cor.{CalculatorConnector, CalculatorCorModule}
 import uk.gov.hmrc.http.HeaderCarrier
 
 object TdAll {
 
-  val calculatorInput = CalculatorInput(
+  val calculatorInput: CalculatorInput = CalculatorInput(
     debits           = List(
       DebitInput(
         500,
@@ -52,18 +54,22 @@ object TdAll {
 }
 
 class PaymentCalculationControllerSpec extends ITSpec {
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   import TdAll._
 
+  override def fakeApplication(): Application = new GuiceApplicationBuilder()
+    .overrides(GuiceableModule.fromGuiceModules(Seq(overridingsModule, new CalculatorCorModule)))
+    .build()
+
   "compute calculation" in {
 
-    val connector = app.injector.instanceOf[CalculatorConnector]
+    fakeApplication().configuration
+    val connector = fakeApplication().injector.instanceOf[CalculatorConnector]
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    val result = connector.calculatePaymentschedule(TdAll.calculatorInput, s"http://localhost:$port").futureValue
 
-    val result = connector.calculatePaymentschedule(TdAll.calculatorInput).futureValue
-
-    result shouldBe PaymentSchedule(
+    result mustBe PaymentSchedule(
       startDate            = "2019-01-31",
       endDate              = "2020-02-18",
       initialPayment       = "123.11",

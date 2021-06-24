@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package timetopaytaxpayer.cor
 import timetopaycalculator.cor.model.{CalculatorInput, PaymentSchedule}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -30,10 +30,11 @@ class CalculatorConnector(
     implicit
     ec: ExecutionContext
 ) {
+  import uk.gov.hmrc.http.HttpReads.Implicits._
 
-  val baseUrl: String = servicesConfig.baseUrl("time-to-pay-calculator")
+  lazy val baseUrl: String = servicesConfig.baseUrl("time-to-pay-calculator")
 
-  def calculatePaymentschedule(calculatorInput: CalculatorInput)(implicit hc: HeaderCarrier): Future[PaymentSchedule] = {
+  def calculatePaymentschedule(calculatorInput: CalculatorInput, baseUrl: String = baseUrl)(implicit hc: HeaderCarrier): Future[PaymentSchedule] = {
     http.POST[CalculatorInput, PaymentSchedule](s"$baseUrl/time-to-pay-calculator/paymentschedule", calculatorInput)
   }
 }

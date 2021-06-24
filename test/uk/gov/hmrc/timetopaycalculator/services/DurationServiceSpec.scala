@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ class DurationServiceSpec extends ITSpec {
 
   forAll(periodCalculationData) { (startDate, endDate, periods, description) =>
     s"The DurationService: return $periods for $startDate to $endDate ($description)" in {
-      service.getRepaymentDates(startDate, endDate).size shouldBe periods
+      service.getRepaymentDates(startDate, endDate).size mustBe periods
     }
   }
 
@@ -62,7 +62,7 @@ class DurationServiceSpec extends ITSpec {
 
   forAll(daysBetweenData) { (startDate, endDate, count) =>
     s"The DurationService: $count days between $startDate and $endDate" in {
-      service.getDaysBetween(startDate, endDate) shouldBe count
+      service.getDaysBetween(startDate, endDate) mustBe count
     }
   }
 

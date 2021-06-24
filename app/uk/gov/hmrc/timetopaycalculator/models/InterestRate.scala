@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package uk.gov.hmrc.timetopaycalculator.models
 
 import java.time.LocalDate
-import java.time.LocalDate.{MAX, MIN}
 
 import play.api.libs.json.{Json, OFormat}
 

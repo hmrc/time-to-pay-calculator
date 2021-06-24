@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,19 @@
 package uk.gov.hmrc.timetopaycalculator.services
 
 import support.ITSpec
-import java.time.LocalDate
 
+import java.time.LocalDate
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import play.api.Logger
 import timetopaycalculator.cor.model.{CalculatorInput, DebitInput, PaymentSchedule}
-import uk.gov.hmrc.timetopaycalculator.models._
 
-import scala.io.Source
 class CalculationServiceSpe
 
 class CalculationServiceSpec extends ITSpec {
 
-  val interestRateService = fakeApplication().injector.instanceOf[InterestRateService]
-  val durationService = fakeApplication().injector.instanceOf[DurationService]
-  val calculatorService = fakeApplication().injector.instanceOf[CalculatorService]
+  private val calculatorService = fakeApplication().injector.instanceOf[CalculatorService]
+
+  private val logger = Logger(getClass)
 
   def debit(amt: BigDecimal, due: String) = DebitInput(amount  = amt.setScale(2), dueDate = LocalDate.parse(due))
   def date(date: String): LocalDate = LocalDate.parse(date)
@@ -62,16 +60,16 @@ class CalculationServiceSpec extends ITSpec {
 
       val totalPaid = amountPaid + schedule.initialPayment
 
-      Logger.info(s"Payment Schedule: Initial: ${schedule.initialPayment}, Over ${schedule.instalments.size}, Regular: ${schedule.instalments.head.amount}, Final: ${schedule.instalments.last.amount}, Total: $totalPaid")
+      logger.info(s"Payment Schedule: Initial: ${schedule.initialPayment}, Over ${schedule.instalments.size}, Regular: ${schedule.instalments.head.amount}, Final: ${schedule.instalments.last.amount}, Total: $totalPaid")
 
-      totalPaid.doubleValue() shouldBe totalPayable.doubleValue()
-      schedule.totalInterestCharged.doubleValue() shouldBe totalInterestCharged.doubleValue()
+      totalPaid.doubleValue() mustBe totalPayable.doubleValue()
+      schedule.totalInterestCharged.doubleValue() mustBe totalInterestCharged.doubleValue()
 
       val instalments = schedule.instalments
 
-      instalments.size shouldBe duration
-      instalments.head.amount shouldBe regularInstalmentAmount
-      instalments.last.amount.doubleValue() shouldBe finalInstalmentAmount.doubleValue()
+      instalments.size mustBe duration
+      instalments.head.amount mustBe regularInstalmentAmount
+      instalments.last.amount.doubleValue() mustBe finalInstalmentAmount.doubleValue()
     }
   }
 
@@ -105,9 +103,9 @@ class CalculationServiceSpec extends ITSpec {
 
       val totalPaid = amountPaid + schedule.initialPayment
 
-      Logger.info(s"Payment Schedule: Initial: ${schedule.initialPayment}, Over ${schedule.instalments.size}, Regular: ${schedule.instalments.head.amount}, Final: ${schedule.instalments.last.amount}, Total: $totalPaid")
+      logger.info(s"Payment Schedule: Initial: ${schedule.initialPayment}, Over ${schedule.instalments.size}, Regular: ${schedule.instalments.head.amount}, Final: ${schedule.instalments.last.amount}, Total: $totalPaid")
 
-      schedule.instalments.size shouldBe duration
+      schedule.instalments.size mustBe duration
     }
   }
 }
